@@ -5,12 +5,39 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
+	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/search/query"
 	"github.com/concepts-system/go-paperless/common"
+	"github.com/concepts-system/go-paperless/errors"
 	"github.com/google/uuid"
 )
 
 const documentDataDirectoryName = "documents"
+
+// SearchDocuments searches the document index and returns the matching documents owned by the user
+// with the given user ID.
+func SearchDocuments(userID uint, queryString string) (*bleve.SearchResult, error) {
+	userDocumentQuery := bleve.NewQueryStringQuery(fmt.Sprintf("OwnerID:%d", userID))
+
+	var query query.Query
+	if len(strings.TrimSpace(queryString)) > 0 {
+		query = bleve.NewQueryStringQuery(queryString)
+	} else {
+		query = bleve.NewMatchAllQuery()
+	}
+
+	request := bleve.NewSearchRequest(bleve.NewConjunctionQuery(userDocumentQuery, query))
+	request.Highlight = bleve.NewHighlightWithStyle("html")
+	results, err := GetIndex().Search(request)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to search document index")
+	}
+
+	return results, nil
+}
 
 // AppendPageToDocument appends a new page to the given document and triggers the pipeline for that document.
 func AppendPageToDocument(document *DocumentModel, contentType string, content io.Reader) (*PageModel, error) {

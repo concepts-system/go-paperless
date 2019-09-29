@@ -24,6 +24,8 @@ type DocumentIndex struct {
 	OwnerID    uint
 	Title      string
 	Date       string
+	Created    string
+	Updated    string
 	PageCount  int
 	Pages      []PageIndex
 }
@@ -104,7 +106,29 @@ func IndexDocument(documentID uint, indexer Indexer) error {
 }
 
 func createIndexMapping() mapping.IndexMapping {
-	return bleve.NewIndexMapping()
+	mapping := bleve.NewIndexMapping()
+	// mapping.DefaultDateTimeParser = time.RFC3339
+	mapping.AddDocumentMapping("document", createDocumentMapping())
+	return mapping
+}
+
+func createDocumentMapping() *mapping.DocumentMapping {
+	mapping := bleve.NewDocumentMapping()
+	mapping.AddFieldMappingsAt("DocumentID", bleve.NewNumericFieldMapping())
+	mapping.AddFieldMappingsAt("OwnerID", bleve.NewNumericFieldMapping())
+	mapping.AddFieldMappingsAt("Title", bleve.NewTextFieldMapping())
+	mapping.AddFieldMappingsAt("Date", bleve.NewDateTimeFieldMapping())
+	mapping.AddFieldMappingsAt("PageCount", bleve.NewNumericFieldMapping())
+	mapping.AddSubDocumentMapping("Pages", createPageMapping())
+	return mapping
+}
+
+func createPageMapping() *mapping.DocumentMapping {
+	mapping := bleve.NewDocumentMapping()
+	mapping.AddFieldMappingsAt("PageID", bleve.NewNumericFieldMapping())
+	mapping.AddFieldMappingsAt("PageNumber", bleve.NewNumericFieldMapping())
+	mapping.AddFieldMappingsAt("Text", bleve.NewTextFieldMapping())
+	return mapping
 }
 
 func getIndexPath() string {
@@ -147,6 +171,8 @@ func indexForDocumentModel(document *DocumentModel, pages []PageModel) DocumentI
 		OwnerID:    document.OwnerID,
 		Title:      document.Title,
 		Date:       document.Date.Format(time.RFC3339),
+		Created:    document.CreatedAt.Format(time.RFC3339),
+		Updated:    document.UpdatedAt.Format(time.RFC3339),
 		PageCount:  len(pages),
 		Pages:      pageIndexes,
 	}

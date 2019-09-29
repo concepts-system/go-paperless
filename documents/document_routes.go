@@ -27,7 +27,8 @@ var (
 // RegisterRoutes registers all related routes for managing users.
 func RegisterRoutes(r *echo.Group) {
 	documentGroup := r.Group("/documents", auth.RequireAuthorization())
-	documentGroup.GET("", findDocuments)
+	documentGroup.GET("", getDocuments)
+	documentGroup.GET("/search", searchDocuments)
 	documentGroup.POST("", createDocument)
 	documentGroup.GET("/:id", getDocument)
 	documentGroup.PUT("/:id", updateDocument)
@@ -46,7 +47,7 @@ func RegisterRoutes(r *echo.Group) {
 
 // Document Handlers
 
-func findDocuments(ec echo.Context) error {
+func getDocuments(ec echo.Context) error {
 	c, _ := ec.(api.Context)
 	pr := c.BindPaging()
 
@@ -57,6 +58,17 @@ func findDocuments(ec echo.Context) error {
 
 	serializer := DocumentListSerializer{c, documents}
 	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
+}
+
+func searchDocuments(ec echo.Context) error {
+	c, _ := ec.(api.Context)
+	result, err := SearchDocuments(*c.UserID, c.QueryParam("query"))
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 func createDocument(ec echo.Context) error {

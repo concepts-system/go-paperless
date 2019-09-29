@@ -6,9 +6,8 @@ import (
 	"os"
 	"time"
 
-	worker "github.com/contribsys/faktory_worker_go"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/kpango/glg"
 
 	"github.com/concepts-system/go-paperless/api"
 	"github.com/concepts-system/go-paperless/auth"
@@ -17,7 +16,9 @@ import (
 	"github.com/concepts-system/go-paperless/documents"
 	"github.com/concepts-system/go-paperless/migrations"
 	"github.com/concepts-system/go-paperless/users"
+	worker "github.com/contribsys/faktory_worker_go"
 	"github.com/go-playground/validator"
+	"github.com/kpango/glg"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
