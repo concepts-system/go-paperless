@@ -397,14 +397,13 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/documents/1",
+							"raw": "{{baseUrl}}/api/documents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"documents",
-								"1"
+								"documents"
 							]
 						}
 					},
@@ -493,7 +492,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Document Content",
+					"name": "Get Document",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -612,6 +611,42 @@
 								"1",
 								"pages",
 								"raw"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Documents",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/documents/search?query=title",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"documents",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "title"
+								}
 							]
 						}
 					},
