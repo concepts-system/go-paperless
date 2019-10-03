@@ -18,10 +18,14 @@ const (
 	formKeyPages             = "pages[]"
 	mimeHeaderKeyContentType = "Content-Type"
 	contentTypePdf           = "application/pdf"
+
+	queryParamSort      = "sort"
+	queryParamHighlight = "highlight"
 )
 
 var (
-	validContentTypes = regexp.MustCompile("image/[a-zA-Z\\-]+")
+	validContentTypes   = regexp.MustCompile("^image/[a-zA-Z\\-]+$")
+	validHighlightTypes = regexp.MustCompile("^html$")
 )
 
 // RegisterRoutes registers all related routes for managing users.
@@ -62,13 +66,24 @@ func getDocuments(ec echo.Context) error {
 
 func searchDocuments(ec echo.Context) error {
 	c, _ := ec.(api.Context)
-	result, err := SearchDocuments(*c.UserID, c.QueryParam("query"))
+	pr := c.BindPaging()
+	sort := c.QueryParam(queryParamSort)
+	highlight := c.QueryParam(queryParamHighlight)
+
+	if len(highlight) > 0 && !isHighlightTypeSupported(highlight) {
+		return errors.BadRequest.Newf(
+			"The highlight type '%s' is not supported",
+			highlight,
+		)
+	}
+
+	results, totalCount, err := SearchDocuments(*c.UserID, c.QueryParam("query"), pr, sort, highlight)
 
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, result)
+	return c.Page(http.StatusOK, pr, int64(totalCount), results)
 }
 
 func createDocument(ec echo.Context) error {
@@ -332,10 +347,14 @@ func bindPageNumber(c echo.Context) (uint, error) {
 	return uint(id), nil
 }
 
+func allowedToAccessDocument(c api.Context, document *DocumentModel) bool {
+	return document.OwnerID == *c.UserID
+}
+
 func isPageContentTypeSupported(contentType string) bool {
 	return validContentTypes.MatchString(contentType)
 }
 
-func allowedToAccessDocument(c api.Context, document *DocumentModel) bool {
-	return document.OwnerID == *c.UserID
+func isHighlightTypeSupported(highlightType string) bool {
+	return validHighlightTypes.MatchString(highlightType)
 }

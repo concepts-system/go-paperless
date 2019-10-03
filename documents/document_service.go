@@ -18,7 +18,13 @@ const documentDataDirectoryName = "documents"
 
 // SearchDocuments searches the document index and returns the matching documents owned by the user
 // with the given user ID.
-func SearchDocuments(userID uint, queryString string) (*bleve.SearchResult, error) {
+func SearchDocuments(
+	userID uint,
+	queryString string,
+	page common.PageRequest,
+	sort string,
+	highlight string,
+) ([]common.SearchResult, uint64, error) {
 	userDocumentQuery := bleve.NewQueryStringQuery(fmt.Sprintf("OwnerID:%d", userID))
 
 	var query query.Query
@@ -29,14 +35,24 @@ func SearchDocuments(userID uint, queryString string) (*bleve.SearchResult, erro
 	}
 
 	request := bleve.NewSearchRequest(bleve.NewConjunctionQuery(userDocumentQuery, query))
-	request.Highlight = bleve.NewHighlightWithStyle("html")
+	request.From = page.Offset
+	request.Size = page.Size
+
+	if len(highlight) > 0 {
+		request.Highlight = bleve.NewHighlightWithStyle(highlight)
+	}
+
+	if len(sort) > 0 {
+		request.SortBy([]string{sort})
+	}
+
 	results, err := GetIndex().Search(request)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to search document index")
+		return nil, 0, errors.Wrap(err, "Failed to search document index")
 	}
 
-	return results, nil
+	return common.ToSearchResults(results), results.Total, nil
 }
 
 // AppendPageToDocument appends a new page to the given document and triggers the pipeline for that document.
@@ -98,6 +114,8 @@ func DeleteContent(documentID uint, contentID string) error {
 
 	return nil
 }
+
+// Helper methods
 
 func createPage(documentID uint, contentType string, content io.Reader) (*PageModel, error) {
 	extension, err := common.GetExtensionByMimeType(contentType)
