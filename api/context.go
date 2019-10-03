@@ -76,6 +76,8 @@ func (c Context) BindPaging() common.PageRequest {
 
 	if pageRequest.Size <= 0 {
 		pageRequest.Size = common.DefaultPageSize
+	} else if pageRequest.Size > common.MaxPageSize {
+		pageRequest.Size = common.MaxPageSize
 	}
 
 	return pageRequest
