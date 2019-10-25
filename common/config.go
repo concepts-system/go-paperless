@@ -59,7 +59,7 @@ type Configuration struct {
 	publicURL         *url.URL
 	port              int
 	databaseType      string
-	databaseURL       *url.URL
+	databaseURL       string
 	migrateDatabase   bool
 	jwtAlgorithm      string
 	jwtKey            []byte
@@ -116,7 +116,7 @@ func (c *Configuration) GetDatabaseType() string {
 }
 
 // GetDatabaseURL returns the URL for establishing the connection to the database.
-func (c *Configuration) GetDatabaseURL() *url.URL {
+func (c *Configuration) GetDatabaseURL() string {
 	return c.databaseURL
 }
 
@@ -190,6 +190,10 @@ func InitializeConfig(release bool) {
 
 	config.migrateDatabase = getMigrateDatabase(config)
 	config.jwtKey = getJWTKey(config)
+
+	if config.IsProduction() {
+		glg.Get().SetLevelMode(glg.DEBG, glg.NONE)
+	}
 }
 
 func loadProfile(profile string) {
@@ -260,22 +264,14 @@ func getDatabaseType() string {
 	return dbType
 }
 
-func getDatabaseURL() *url.URL {
+func getDatabaseURL() string {
 	databaseURL := strings.TrimSpace(os.Getenv(keyDatabaseURL))
 
 	if databaseURL == "" {
 		databaseURL = defaultDatabaseURL
 	}
 
-	url, err := url.Parse(databaseURL)
-
-	if err != nil {
-		glg.Warnf("Invalid database URL given: '%s'", databaseURL)
-		glg.Warnf("Falling back to default '%s'", defaultDatabaseURL)
-		url, _ = url.Parse(defaultDatabaseURL)
-	}
-
-	return url
+	return databaseURL
 }
 
 func getMigrateDatabase(c *Configuration) bool {

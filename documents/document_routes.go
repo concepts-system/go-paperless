@@ -77,7 +77,13 @@ func searchDocuments(ec echo.Context) error {
 		)
 	}
 
-	results, totalCount, err := SearchDocuments(*c.UserID, c.QueryParam("query"), pr, sort, highlight)
+	results, totalCount, err := SearchDocuments(
+		*c.UserID,
+		c.QueryParam("query"),
+		pr,
+		sort,
+		highlight,
+	)
 
 	if err != nil {
 		return err

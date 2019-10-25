@@ -35,6 +35,7 @@ func main() {
 	if version == "" {
 		version = "DEV-SNAPSHOT"
 	}
+
 	if buildDate == "" {
 		buildDate = time.Now().Format("2006-01-02")
 	}

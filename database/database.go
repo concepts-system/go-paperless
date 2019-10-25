@@ -15,7 +15,7 @@ var database *gorm.DB
 func DB() *gorm.DB {
 	if database == nil {
 		var err error
-		database, err = gorm.Open(common.Config().GetDatabaseType(), common.Config().GetDatabaseURL().String())
+		database, err = gorm.Open(common.Config().GetDatabaseType(), common.Config().GetDatabaseURL())
 
 		if err != nil {
 			panic(errors.Wrapf(err, "Failed to connect to database"))
