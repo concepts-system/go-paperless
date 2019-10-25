@@ -1,0 +1,47 @@
+---
+version: "3"
+
+services:
+  # Go Paperless Service
+  go-paperless:
+    build: .
+    image: concepts-system/go-paperless:local-dev
+    volumes:
+      - go-paperless-data:/var/lib/go-paperless/data
+    depends_on:
+      - postgres
+      - faktory
+    ports:
+      - 8080:8080
+    environment:
+      - DATA_PATH=/var/lib/go-paperless/data
+      - DB_TYPE=postgres
+      - DB_URL=host=postgres port=5432 user=paperless password=p4p3rl3ss dbname=go_paperless sslmode=disable
+      - FAKTORY_URL=tcp://faktory:7419
+      - JWT_KEY=insecure_dev_key
+
+  # Postgres Database
+  postgres:
+    image: postgres:12-alpine
+    ports:
+      - 15432:5432
+    environment:
+      - POSTGRES_USER=paperless
+      - POSTGRES_PASSWORD=p4p3rl3ss
+      - POSTGRES_DB=go_paperless
+    volumes:
+      - db-data:/var/lib/postgresql
+
+  # Faktory Job Management
+  faktory:
+    image: contribsys/faktory:latest
+    ports:
+      - 7419:7419
+      - 7420:7420
+    volumes:
+      - faktory-data:/var/lib/faktory
+
+volumes:
+  faktory-data:
+  go-paperless-data:
+  db-data:
