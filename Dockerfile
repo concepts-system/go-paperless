@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     ca-certificates \
     sqlite \
     tesseract-ocr \
-    tesseract-ocr-data-deu
+    tesseract-ocr-data-deu \
+    imagemagick
 RUN rm -rf /var/cache/apk/*
 
 # Prepare Executable
