@@ -381,7 +381,47 @@
 			"name": "Documents",
 			"item": [
 				{
-					"name": "Find Documents",
+					"name": "Search Documents",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/documents/search?query=title&highlight=html",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"documents",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "title"
+								},
+								{
+									"key": "highlight",
+									"value": "html"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Documents",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -611,42 +651,6 @@
 								"1",
 								"pages",
 								"raw"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Search Documents",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/documents/search?query=title",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"documents",
-								"search"
-							],
-							"query": [
-								{
-									"key": "query",
-									"value": "title"
-								}
 							]
 						}
 					},
