@@ -1,6 +1,8 @@
 package documents
 
 import (
+	"fmt"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/concepts-system/go-paperless/common"
@@ -27,18 +29,24 @@ const (
 // PageModel defines the data model for pages of DocumentModels.
 type PageModel struct {
 	gorm.Model
-	DocumentID  uint      `gorm:"not_null;unique_index:idx_document_page"`
-	PageNumber  uint      `gorm:"not_null;unique_index:idx_document_page"`
-	State       PageState `gorm:"not_null"`
-	Text        string    `gorm:"size:8192"`
-	ContentType string    `gorm:"not_null;size:64"`
-	ContentID   string    `gorm:"size:255"`
-	Document    DocumentModel
+	DocumentID    uint      `gorm:"not_null;unique_index:idx_document_page"`
+	PageNumber    uint      `gorm:"not_null;unique_index:idx_document_page"`
+	State         PageState `gorm:"not_null"`
+	Text          string    `gorm:"size:8192"`
+	ContentType   string    `gorm:"not_null;size:64"`
+	FileExtension string    `gotm:"not_null;size:8"`
+	Checksum      string    `gorm:"not_null;size:32"`
+	Document      DocumentModel
 }
 
 // TableName for PageModel entities.
 func (PageModel) TableName() string {
 	return "document_pages"
+}
+
+// FileName returns the name this page's data is stored under on the file system.
+func (p PageModel) FileName() string {
+	return fmt.Sprintf("%s.%s", p.Checksum, p.FileExtension)
 }
 
 // GetPageByDocumentIDAndPageNumber tries to find the page with the given ID and page number.

@@ -190,7 +190,7 @@ func getDocumentContent(ec echo.Context) error {
 		return c.NoContent(http.StatusNoContent)
 	}
 
-	contentFile, err := OpenContent(document.ID, document.ContentID)
+	contentFile, err := OpenContent(document.ID, document.FileName())
 	if err != nil {
 		return err
 	}

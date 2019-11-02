@@ -55,8 +55,6 @@ func submitDocumentGenerationJob(documentID uint) error {
 // Job Handler Functions
 
 func convertPage(ctx worker.Context, args ...interface{}) error {
-	glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
-
 	pageID, err := getIDFromArgs(args)
 	if err != nil {
 		return err
@@ -78,8 +76,6 @@ func convertPage(ctx worker.Context, args ...interface{}) error {
 }
 
 func recognizePage(ctx worker.Context, args ...interface{}) error {
-	glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
-
 	pageID, err := getIDFromArgs(args)
 	if err != nil {
 		return err
@@ -138,8 +134,6 @@ func recognizePage(ctx worker.Context, args ...interface{}) error {
 }
 
 func indexDocument(ctx worker.Context, args ...interface{}) error {
-	glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
-
 	documentID, err := getIDFromArgs(args)
 	if err != nil {
 		return err
@@ -168,8 +162,6 @@ func indexDocument(ctx worker.Context, args ...interface{}) error {
 }
 
 func generateDocument(ctx worker.Context, args ...interface{}) error {
-	glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
-
 	documentID, err := getIDFromArgs(args)
 	if err != nil {
 		return err
@@ -181,23 +173,24 @@ func generateDocument(ctx worker.Context, args ...interface{}) error {
 	}
 
 	glg.Infof("Generating searchable PDF for document %d", documentID)
+	newContentID, fileExtension, err := ocrEngine.GenerateDocument(document)
 
-	newContentID, err := ocrEngine.GenerateDocument(document)
 	if err != nil {
 		return err
 	}
 
-	if err := DeleteContent(documentID, document.ContentID); err != nil {
+	document.ContentID = newContentID
+	document.FileExtension = fileExtension
+	document.State = DocumentStateClean
+
+	if err := DeleteContent(documentID, document.FileName()); err != nil {
 		return errors.Wrapf(
 			err,
 			"Failed to clean-up old content %s for document %d",
-			document.ContentID,
+			document.FileName(),
 			documentID,
 		)
 	}
-
-	document.ContentID = newContentID
-	document.State = DocumentStateClean
 
 	if err := document.Save(); err != nil {
 		return errors.Wrapf(err, "Failed to update document %d", documentID)
@@ -211,6 +204,8 @@ func generateDocument(ctx worker.Context, args ...interface{}) error {
 
 func jobHandler(handler worker.Perform) worker.Perform {
 	return func(ctx worker.Context, args ...interface{}) error {
+		glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
+
 		err := handler(ctx, args...)
 		if err != nil {
 			glg.Error(err)

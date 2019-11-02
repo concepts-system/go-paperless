@@ -1,6 +1,7 @@
 package documents
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -76,21 +77,21 @@ func AppendPageToDocument(document *DocumentModel, contentType string, content i
 }
 
 // GetContentPath returns the full path for the file containing a page's or document's content.
-func GetContentPath(documentID uint, contentID string) string {
+func GetContentPath(documentID uint, contentPath string) string {
 	pageContentPath := path.Join(
 		common.Config().GetDataPath(),
 		documentDataDirectoryName,
 		fmt.Sprintf("%d", documentID),
-		contentID,
+		contentPath,
 	)
 
 	os.MkdirAll(path.Dir(pageContentPath), os.ModePerm)
 	return pageContentPath
 }
 
-// OpenContent opens the content file for the given document ID and content ID.
-func OpenContent(documentID uint, contentID string) (*os.File, error) {
-	path := GetContentPath(documentID, contentID)
+// OpenContent opens the content file for the given document ID and path.
+func OpenContent(documentID uint, contentPath string) (*os.File, error) {
+	path := GetContentPath(documentID, contentPath)
 	if _, err := os.Stat(path); err != nil {
 		return nil, err
 	}
@@ -103,9 +104,9 @@ func OpenContent(documentID uint, contentID string) (*os.File, error) {
 	return file, nil
 }
 
-// DeleteContent removes a content file for the given document and content ID.
-func DeleteContent(documentID uint, contentID string) error {
-	path := GetContentPath(documentID, contentID)
+// DeleteContent removes a content file for the given document and path.
+func DeleteContent(documentID uint, contentPath string) error {
+	path := GetContentPath(documentID, contentPath)
 	_, err := os.Stat(path)
 
 	if os.IsNotExist(err) {
@@ -128,24 +129,34 @@ func createPage(documentID uint, contentType string, content io.Reader) (*PageMo
 		return nil, err
 	}
 
-	contentID := fmt.Sprintf("%s%s", uuid.New(), extension)
 	page := PageModel{
-		DocumentID:  documentID,
-		PageNumber:  uint(len(pages)),
-		State:       PageStateDirty,
-		ContentType: contentType,
-		ContentID:   contentID,
+		DocumentID:    documentID,
+		PageNumber:    uint(len(pages)),
+		State:         PageStateDirty,
+		ContentType:   contentType,
+		FileExtension: extension,
 	}
 
-	contentPath := GetContentPath(documentID, contentID)
+	contentPath := GetContentPath(documentID, uuid.New().String())
 	file, err := os.Create(contentPath)
+	hash := sha256.New()
+	tee := io.MultiWriter(file, hash)
 
 	if err != nil {
 		return nil, err
 	}
 
 	defer file.Close()
-	io.Copy(file, content)
+	if _, err = io.Copy(tee, content); err != nil {
+		return nil, errors.Wrapf(err, "Failed to write page's content file '%s'", contentPath)
+	}
+
+	page.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
+	finalPath := GetContentPath(documentID, page.FileName())
+
+	if err = os.Rename(contentPath, finalPath); err != nil {
+		return nil, errors.Wrapf(err, "Failed to rename final page content file '%s'", finalPath)
+	}
 
 	if err = page.Create(); err != nil {
 		return nil, err

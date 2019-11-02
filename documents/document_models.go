@@ -1,6 +1,7 @@
 package documents
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -33,18 +34,24 @@ const (
 // DocumentModel defines the data model for documents managed by the system.
 type DocumentModel struct {
 	gorm.Model
-	OwnerID   uint            `gorm:"not_null"`
-	Owner     users.UserModel `gorm:"not_null"`
-	Title     string          `gorm:"not_null;size:255"`
-	Date      *time.Time      `gorm:"index"`
-	State     DocumentState   `gorm:"not_null;size:32"`
-	ContentID string          `gorm:"size:255"`
-	Pages     []PageModel
+	OwnerID       uint            `gorm:"not_null"`
+	Owner         users.UserModel `gorm:"not_null"`
+	Title         string          `gorm:"not_null;size:255"`
+	Date          *time.Time      `gorm:"index"`
+	State         DocumentState   `gorm:"not_null;size:32"`
+	ContentID     string          `gorm:"size:255"`
+	FileExtension string          `gorm:"size:8"`
+	Pages         []PageModel
 }
 
 // TableName for DocumentModel entities.
 func (DocumentModel) TableName() string {
 	return "documents"
+}
+
+// FileName returns the name this page's data is stored under on the file system.
+func (d DocumentModel) FileName() string {
+	return fmt.Sprintf("%s.%s", d.ContentID, d.FileExtension)
 }
 
 // GetDocumentByID tries to find the document with the given ID.

@@ -2,7 +2,6 @@ package documents
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os/exec"
 	"strings"
@@ -11,12 +10,14 @@ import (
 	"github.com/google/uuid"
 )
 
+const fileExtensionPdf = "pdf"
+
 // OcrEngine defines a type for bundling OCR related operations.
 type OcrEngine struct{}
 
 // RecognizePage executes OCR to get the text from the pages image content.
 func (o OcrEngine) RecognizePage(page *PageModel) (*bytes.Buffer, error) {
-	content, err := o.recognizeFile(GetContentPath(page.DocumentID, page.ContentID), "deu+eng")
+	content, err := o.recognizeFile(GetContentPath(page.DocumentID, page.FileName()), "deu+eng")
 	if err != nil {
 		return nil, errors.Wrapf(err, "Recognition failed for page %d", page.ID)
 	}
@@ -25,32 +26,32 @@ func (o OcrEngine) RecognizePage(page *PageModel) (*bytes.Buffer, error) {
 }
 
 // GenerateDocument generates a searchable PDF for the given model and its pages.
-// Returns the file name of the created PDF; may be used as document's new content ID.
-func (o OcrEngine) GenerateDocument(document *DocumentModel) (string, error) {
+// Returns the new content ID and the file extension of the created PDF; may be used as document's new content ID.
+func (o OcrEngine) GenerateDocument(document *DocumentModel) (string, string, error) {
 	pages, err := GetAllPagesByDocumentID(document.ID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if !allPagesClean(pages) {
-		return "", errors.BadRequest.Newf("Generation failed since not all pages of document %d are clean", document.ID)
+		return "", "", errors.BadRequest.Newf("Generation failed since not all pages of document %d are clean", document.ID)
 	}
 
 	pagePaths := make([]string, len(pages))
 	for idx, page := range pages {
-		pagePaths[idx] = GetContentPath(page.DocumentID, page.ContentID)
+		pagePaths[idx] = GetContentPath(page.DocumentID, page.FileName())
 	}
 
 	newContentID := uuid.New().String()
 	if err := generateSearchablePDF(GetContentPath(document.ID, newContentID), "eng+deu", pagePaths); err != nil {
-		return "", errors.Wrapf(err, "Failed to generate document with ID %d", document.ID)
+		return "", "", errors.Wrapf(err, "Failed to generate document with ID %d", document.ID)
 	}
 
-	return fmt.Sprintf("%s.pdf", newContentID), nil
+	return newContentID, fileExtensionPdf, nil
 }
 
 func (o OcrEngine) recognizeFile(path, languages string) (*bytes.Buffer, error) {
-	// TODO: Make OCR command/path configurable
+	// TODO Make OCR command/path configurable
 	cmd := exec.Command("tesseract", "-l", languages, path, "-")
 	var buffer bytes.Buffer
 	cmd.Stdout = &buffer
