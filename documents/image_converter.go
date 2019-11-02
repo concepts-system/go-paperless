@@ -66,7 +66,7 @@ func (i ImageConverter) ConvertPage(pageID uint) error {
 	finalFile := GetContentPath(page.DocumentID, finalFileName)
 
 	if err = os.Rename(tempFile, finalFile); err != nil {
-		return errors.Wrapf(err, "Failed to rename final page content file '%s' to '%s'", tempFile)
+		return errors.Wrapf(err, "Failed to rename final page content file '%s' to '%s'", tempFile, finalFile)
 	}
 
 	if err := updatePageAfterConversion(page, checksum); err != nil {
