@@ -1,4 +1,4 @@
-package common
+package config
 
 import (
 	"fmt"
@@ -81,17 +81,17 @@ func (c *Configuration) IsProfileActive(profile string) bool {
 	return false
 }
 
-// IsProduction returns a boolean value indicating whether the development profile
-// is currently active.
+// IsProduction returns a boolean value indicating whether the development
+// profile is currently active.
 func (c *Configuration) IsProduction() bool {
 	return c.IsProfileActive(productionProfile)
 }
 
-// IsDevelopment returns a boolean value indicating whether the development profile
-// is currently active.
+// IsDevelopment returns a boolean value indicating whether the development
+// profile is currently active.
 //
-// Development profile is only recognized as active when 'production' profile is not set.
-//
+// Development profile is only recognized as active when 'production' profile
+// is not set.
 func (c *Configuration) IsDevelopment() bool {
 	if c.IsProduction() {
 		return false
@@ -110,27 +110,32 @@ func (c *Configuration) GetPort() int {
 	return c.port
 }
 
-// GetDatabaseType gets the configured type of database. Can be 'sqlite3', 'postgres' or 'mysql'.
+// GetDatabaseType gets the configured type of database.
+// Can be 'sqlite3', 'postgres' or 'mysql'.
 func (c *Configuration) GetDatabaseType() string {
 	return c.databaseType
 }
 
-// GetDatabaseURL returns the URL for establishing the connection to the database.
+// GetDatabaseURL returns the URL for establishing the connection to the
+// database.
 func (c *Configuration) GetDatabaseURL() string {
 	return c.databaseURL
 }
 
-// MigrateDatabase returns a boolean value indicating whether the migrations should be run.
+// MigrateDatabase returns a boolean value indicating whether the migrations
+// should be run.
 func (c *Configuration) MigrateDatabase() bool {
 	return c.migrateDatabase
 }
 
-// GetJWTAlgorithm gets the configured algorithm for issueing and verifying JWTs.
+// GetJWTAlgorithm gets the configured algorithm for issueing and verifying
+// JWTs.
 func (c *Configuration) GetJWTAlgorithm() string {
 	return c.jwtAlgorithm
 }
 
-// GetJWTKey gets the configured encryption/decryption key for issueing and verifying JWTs.
+// GetJWTKey gets the configured encryption/decryption key for issueing and
+// verifying JWTs.
 func (c *Configuration) GetJWTKey() []byte {
 	return c.jwtKey
 }
@@ -150,19 +155,14 @@ func (c *Configuration) GetDataPath() string {
 	return c.dataPath
 }
 
-// Configuration singleton
-var config *Configuration
-
-// Config returns the singleton config instance.
-func Config() *Configuration {
-	return config
-}
-
-// InitializeConfig loads the application configuration using environment properties
-// respecting '.env' file.
-func InitializeConfig(release bool) {
+// LoadConfiguration loads the application configuration using environment
+// properties respecting '.env' file.
+func LoadConfiguration(release bool) *Configuration {
 	if release {
-		os.Setenv(keyProfiles, fmt.Sprintf("%s %s", os.Getenv(keyProfiles), productionProfile))
+		os.Setenv(
+			keyProfiles,
+			fmt.Sprintf("%s %s", os.Getenv(keyProfiles), productionProfile),
+		)
 	}
 
 	godotenv.Load(".env.local")
@@ -176,7 +176,7 @@ func InitializeConfig(release bool) {
 	}
 
 	// Initialize and validate configuration singleton
-	config = &Configuration{
+	config := &Configuration{
 		profiles:          profiles,
 		publicURL:         getPublicURL(),
 		port:              getPort(),
@@ -194,6 +194,8 @@ func InitializeConfig(release bool) {
 	if config.IsProduction() {
 		glg.Get().SetLevelMode(glg.DEBG, glg.NONE)
 	}
+
+	return config
 }
 
 func loadProfile(profile string) {
@@ -229,8 +231,8 @@ func getPublicURL() *url.URL {
 	url, err := url.Parse(publicURL)
 
 	if err != nil {
-		glg.Warnf("Invalid base URL given: '%s'", publicURL)
-		glg.Warnf("Falling back to default '%s'", defaultPublicURL)
+		glg.Warnf("Invalid base URL given: '%s'!", publicURL)
+		glg.Warnf("Falling back to default '%s'.", defaultPublicURL)
 		url, _ = url.Parse(defaultPublicURL)
 	}
 
@@ -248,7 +250,7 @@ func getPort() int {
 
 	if err != nil {
 		glg.Warnf("Invalid port given: '%s'!", portString)
-		glg.Warnf("Using default port '%d'", defaultPort)
+		glg.Warnf("Using default port '%d'.", defaultPort)
 	}
 
 	return port
@@ -286,11 +288,10 @@ func getMigrateDatabase(c *Configuration) bool {
 		return true
 	} else if migrateDatabaseString != "false" {
 		glg.Fatalf(
-			"Invalid value '%s' for configuration key '%s' given! Only 'true' and 'false' are allowed.",
+			"Invalid value '%s' for configuration key '%s' given! Only 'true' and 'false' are allowed!",
 			keyDatabaseMigrate,
 			migrateDatabaseString,
 		)
-		panic("Invalid configuration!")
 	}
 
 	return false
@@ -306,7 +307,7 @@ func getJWTAlgorithm() string {
 	algorithm = strings.ToUpper(algorithm)
 
 	if !isJWTAlgorithmSupported(algorithm) {
-		panic("JWT algorithm '" + algorithm + "' is unknown or unsupported!")
+		glg.Fatalf("JWT algorithm '%s' is unknown or unsupported!", algorithm)
 	}
 
 	return algorithm
@@ -316,12 +317,10 @@ func getJWTKey(c *Configuration) []byte {
 	key := strings.TrimSpace(os.Getenv(keyJWTKey))
 
 	if key == "" {
-		key = RandomString(32)
-
 		if c.IsDevelopment() {
-			glg.Infof("No JWT key given, using random one: %s", key)
+			glg.Infof("No JWT key given, using empty string.")
 		} else {
-			glg.Warn("No JWT key given, using random one.")
+			glg.Fatalf("No JWT key given in production mode!")
 		}
 	}
 
@@ -340,7 +339,7 @@ func getJWTExpirationTime() time.Duration {
 
 	if err != nil {
 		glg.Warnf("Invalid expiration time given: '%s'!", expirationTimeString)
-		glg.Warnf("Using default expiration time '%s'", defaultJWTExpirationTime)
+		glg.Warnf("Using default expiration time '%s'.", defaultJWTExpirationTime)
 
 		return defaultJWTExpirationTime
 	}
@@ -360,7 +359,7 @@ func getJWTRefreshTime() time.Duration {
 
 	if err != nil {
 		glg.Warnf("Invalid expiration time given: '%s'!", refreshTimeString)
-		glg.Warnf("Using default expiration time '%s'", defaultJWTRefreshTime)
+		glg.Warnf("Using default expiration time '%s'.", defaultJWTRefreshTime)
 
 		return defaultJWTRefreshTime
 	}

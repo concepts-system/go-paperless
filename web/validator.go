@@ -1,4 +1,4 @@
-package common
+package web
 
 import "github.com/go-playground/validator"
 
@@ -8,6 +8,6 @@ type Validator struct {
 }
 
 // Validate validates the given object based on its constraints.
-func (cv Validator) Validate(i interface{}) error {
-	return cv.Validator.Struct(i)
+func (validator Validator) Validate(i interface{}) error {
+	return validator.Validator.Struct(i)
 }

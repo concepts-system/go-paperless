@@ -1,8 +1,4 @@
-package auth
-
-import (
-	"github.com/concepts-system/go-paperless/api"
-)
+package web
 
 // AuthenticationRequestValidator defines the validation rules for a general authentication request.
 type AuthenticationRequestValidator struct {
@@ -21,9 +17,9 @@ type PasswordAuthenticationRequestValidator struct {
 	Password string `form:"password" validate:"required"`
 }
 
-// Bind binds the API request to the request model.
-func (v *AuthenticationRequestValidator) Bind(c api.Context) error {
-	return c.BindAndValidate(v)
+// Bind binds the request to the request model.
+func (validator *AuthenticationRequestValidator) Bind(c Context) error {
+	return c.BindAndValidate(validator)
 }
 
 // NewPasswordAuthenticationRequestValidator returns a new instance of the respective validator.
@@ -31,9 +27,9 @@ func NewPasswordAuthenticationRequestValidator() PasswordAuthenticationRequestVa
 	return PasswordAuthenticationRequestValidator{}
 }
 
-// Bind binds the API request to the request model.
-func (v *PasswordAuthenticationRequestValidator) Bind(c api.Context) error {
-	return c.BindAndValidate(v)
+// Bind binds the request to the request model.
+func (validator *PasswordAuthenticationRequestValidator) Bind(c Context) error {
+	return c.BindAndValidate(validator)
 }
 
 // RefreshTokenAuthenticationRequestValidator defines the validation rules for an authentication request
@@ -49,7 +45,7 @@ func NewRefreshTokenAuthenticationRequestValidator() RefreshTokenAuthenticationR
 	return RefreshTokenAuthenticationRequestValidator{}
 }
 
-// Bind binds the API request to the request model.
-func (v *RefreshTokenAuthenticationRequestValidator) Bind(c api.Context) error {
-	return c.BindAndValidate(v)
+// Bind binds the request to the request model.
+func (validator *RefreshTokenAuthenticationRequestValidator) Bind(c Context) error {
+	return c.BindAndValidate(validator)
 }

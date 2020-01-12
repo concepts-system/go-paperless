@@ -21,13 +21,12 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/joho/godotenv v1.3.0
 	github.com/kpango/glg v1.4.4
-	github.com/labstack/echo v3.3.10+incompatible
-	github.com/labstack/gommon v0.2.8 // indirect
+	github.com/labstack/echo/v4 v4.1.13
+	github.com/labstack/gommon v0.3.0
 	github.com/leodido/go-urn v1.1.0 // indirect
-	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 // indirect
-	github.com/valyala/fasttemplate v1.0.1 // indirect
-	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
+	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/gormigrate.v1 v1.5.0
 )

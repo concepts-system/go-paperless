@@ -1,4 +1,8 @@
-package common
+package web
+
+import (
+	"github.com/concepts-system/go-paperless/domain"
+)
 
 const (
 	// DefaultPageSize defines the default page size.
@@ -12,4 +16,12 @@ const (
 type PageRequest struct {
 	Offset int `form:"offset"`
 	Size   int `form:"size"`
+}
+
+// ToDomainPageRequest maps the given page request to a domain value.
+func (pr PageRequest) ToDomainPageRequest() domain.PageRequest {
+	return domain.PageRequest{
+		Offset: domain.PageOffset(pr.Offset),
+		Size:   domain.PageSize(pr.Size),
+	}
 }

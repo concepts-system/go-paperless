@@ -1,26 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"time"
 
+	"github.com/concepts-system/go-paperless/domain"
+
+	"github.com/concepts-system/go-paperless/infrastructure"
+
+	"github.com/concepts-system/go-paperless/application"
+
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
-	"github.com/concepts-system/go-paperless/api"
-	"github.com/concepts-system/go-paperless/auth"
-	"github.com/concepts-system/go-paperless/common"
-	"github.com/concepts-system/go-paperless/database"
-	"github.com/concepts-system/go-paperless/documents"
-	"github.com/concepts-system/go-paperless/migrations"
-	"github.com/concepts-system/go-paperless/users"
-	worker "github.com/contribsys/faktory_worker_go"
-	"github.com/go-playground/validator"
 	"github.com/kpango/glg"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+
+	"github.com/concepts-system/go-paperless/config"
+	"github.com/concepts-system/go-paperless/web"
 )
 
 var (
@@ -29,8 +26,22 @@ var (
 	release   string
 )
 
+type bootstrapper struct {
+	config   *config.Configuration
+	database *infrastructure.Database
+	server   *web.Server
+
+	users domain.Users
+
+	authService application.AuthService
+	userService application.UserService
+
+	tokenKeyResolver application.TokenKeyResolver
+}
+
 func main() {
 	start := time.Now()
+	bs := &bootstrapper{}
 
 	if version == "" {
 		version = "DEV-SNAPSHOT"
@@ -41,97 +52,97 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano())
-
 	glg.Infof("Starting application %s (%s)", version, buildDate)
-	common.InitializeConfig(release == "true")
-	createDirectories()
 
-	defer database.DB().Close()
+	loadConfiguration(bs)
+	prepareDatabase(bs)
+	defer bs.database.Close()
 
-	if common.Config().MigrateDatabase() {
-		glg.Info("Running migrations...")
-		migrate()
-	}
+	// glg.Info("Initializing job workers...")
+	// initializeWorkers()
 
-	glg.Info("Initializing job workers...")
-	initializeWorkers()
+	// glg.Info("Preparing document index...")
+	// documents.PrepareIndex()
+	// defer documents.GetIndex().Close()
 
-	glg.Info("Preparing document index...")
-	documents.PrepareIndex()
-	defer documents.GetIndex().Close()
+	setupDependencies(bs)
+	initializeServer(bs)
+	ensureUserExists(bs)
 
-	ensureUserExists()
-
-	server := initializeServer()
 	glg.Successf("Start-up completed in %v", time.Since(start))
-
-	endpoint := fmt.Sprintf(":%d", common.Config().GetPort())
-	glg.Successf("Accepting connection on %s", endpoint)
-	server.Start(endpoint)
+	bs.server.Start()
 }
 
-func createDirectories() {
+func loadConfiguration(bs *bootstrapper) {
+	glg.Info("Loading configuration...")
+	bs.config = config.LoadConfiguration(release == "true")
+	createDirectories(bs)
+}
+
+func prepareDatabase(bs *bootstrapper) {
+	bs.database = infrastructure.NewDatabase(bs.config)
+	bs.database.Connect()
+
+	if bs.config.MigrateDatabase() {
+		glg.Info("Running migrations...")
+
+		// Migrate to most recent version by default.
+		// Use 'bs.database.MigrateTo(version)' to migrate to a specific version.
+		if err := bs.database.Migrate(); err != nil {
+			glg.Fatalf("Error while migrating database: %v", err)
+		}
+
+	}
+}
+
+func createDirectories(bs *bootstrapper) {
 	glg.Info("Setting up directories...")
+	config := bs.config
 
 	// Create data directory
-	if _, err := os.Stat(common.Config().GetDataPath()); os.IsNotExist(err) {
-		os.MkdirAll(common.Config().GetDataPath(), os.ModePerm)
+	if _, err := os.Stat(config.GetDataPath()); os.IsNotExist(err) {
+		os.MkdirAll(config.GetDataPath(), os.ModePerm)
 	}
 }
 
-func initializeServer() *echo.Echo {
-	glg.Info("Initializing server...")
+func setupDependencies(bs *bootstrapper) {
+	bs.tokenKeyResolver = application.ConfigTokenKeyResolver(bs.config)
+	bs.users = infrastructure.NewUsers(bs.database)
 
-	r := echo.New()
-	r.Debug = common.Config().IsDevelopment()
-	r.HideBanner = true
-	r.HidePort = true
-	r.HTTPErrorHandler = api.ErrorHandler
-	r.Validator = common.Validator{Validator: validator.New()}
-
-	r.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "${time_rfc3339} \t${method}\t${uri} -> status=${status} [${latency_human}] | ${error}\n",
-	}))
-	r.Use(middleware.Recover())
-	r.Use(api.CustomContext)
-
-	registerRoutes(r.Group(""))
-	return r
+	bs.userService = application.NewUserService(bs.users)
+	bs.authService = application.NewAuthService(
+		bs.config,
+		bs.users,
+		bs.tokenKeyResolver,
+	)
 }
 
-func registerRoutes(r *echo.Group) {
-	// Common routes
-	auth.RegisterRoutes(r)
-
-	// API routes
-	api := r.Group("/api")
-	users.RegisterRoutes(api)
-	documents.RegisterRoutes(api)
+func initializeServer(bs *bootstrapper) {
+	bs.server = web.NewServer(bs.config)
+	registerRouters(bs)
 }
 
-func migrate() {
-	migrator := migrations.BuildMigrator(database.DB())
-
-	// Migrate to latest version by default
-	if err := migrator.Migrate(); err != nil {
-		glg.Fatalf("Error while executing DB migrations: %v", err)
-		panic("Failed to execute database migrations!")
-	}
-
-	// Use 'migrator.MigrateTo(version)' to migrate to a specific version
+func registerRouters(bs *bootstrapper) {
+	// TODO: Register auth, user and document routes here
+	bs.server.Register(
+		web.NewAuthRouter(
+			bs.authService,
+			application.ConfigTokenKeyResolver(bs.config),
+		),
+	)
 }
 
-func initializeWorkers() {
-	glg.Info("Initializing workers...")
+// func initializeWorkers() {
+// 	glg.Info("Initializing workers...")
 
-	manager := worker.NewManager()
-	documents.RegisterWorkers(manager)
+// 	manager := worker.NewManager()
+// 	documents.RegisterWorkers(manager)
 
-	go manager.Run()
-}
+// 	go manager.Run()
+// }
 
-func ensureUserExists() {
-	_, count, err := users.Find(common.PageRequest{Offset: 0, Size: 1})
+func ensureUserExists(bs *bootstrapper) {
+	_, count, err := bs.userService.FindUsers(domain.PageRequest{Offset: 0, Size: 1})
 
 	if err != nil {
 		glg.Fatalf("Error while checking for default user: %v", err)
@@ -143,7 +154,7 @@ func ensureUserExists() {
 	}
 
 	glg.Info("No user present; creating default one...")
-	defaultUser := users.UserModel{
+	defaultUser := &domain.User{
 		Username: "admin",
 		Forename: "Default",
 		Surname:  "User",
@@ -151,11 +162,9 @@ func ensureUserExists() {
 		IsActive: true,
 	}
 
-	defaultUser.SetPassword("admin")
-	err = defaultUser.Create()
+	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
 
 	if err != nil {
 		glg.Fatalf("Error while creating default user: %v", err)
-		panic(err)
 	}
 }

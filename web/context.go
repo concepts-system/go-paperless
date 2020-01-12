@@ -1,4 +1,4 @@
-package api
+package web
 
 import (
 	"bytes"
@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
-	"github.com/concepts-system/go-paperless/common"
+	"github.com/concepts-system/go-paperless/application"
 	"github.com/concepts-system/go-paperless/errors"
 )
 
@@ -65,9 +65,8 @@ func (c Context) HasRole(role string) bool {
 
 // BindPaging tries to derive pagination info from the current request. The method falls back
 // to default values (Offset: 0, Size: 10) if some arguments are missing or wrong.
-func (c Context) BindPaging() common.PageRequest {
-	pageRequest := common.PageRequest{}
-
+func (c Context) BindPaging() PageRequest {
+	pageRequest := PageRequest{}
 	c.Bind(&pageRequest)
 
 	if pageRequest.Offset < 0 {
@@ -75,9 +74,9 @@ func (c Context) BindPaging() common.PageRequest {
 	}
 
 	if pageRequest.Size <= 0 {
-		pageRequest.Size = common.DefaultPageSize
-	} else if pageRequest.Size > common.MaxPageSize {
-		pageRequest.Size = common.MaxPageSize
+		pageRequest.Size = DefaultPageSize
+	} else if pageRequest.Size > MaxPageSize {
+		pageRequest.Size = MaxPageSize
 	}
 
 	return pageRequest
@@ -86,7 +85,7 @@ func (c Context) BindPaging() common.PageRequest {
 // Page sends a page response.
 func (c Context) Page(
 	status int,
-	page common.PageRequest,
+	page PageRequest,
 	totalCount int64,
 	data interface{},
 ) error {
@@ -103,11 +102,11 @@ func (c Context) Page(
 // BindAndValidate binds and validates the given object from the current context.
 func (c Context) BindAndValidate(i interface{}) error {
 	if err := c.Bind(i); err != nil {
-		return errors.BadRequest.Newf("Invalid request: %s", err.Error())
+		return application.BadRequestError.Newf("Invalid request: %s", err.Error())
 	}
 
 	if err := c.Validate(i); err != nil {
-		customError := errors.BadRequest.New("Validation failed")
+		customError := application.BadRequestError.New("Validation failed")
 
 		for _, validationError := range err.(validator.ValidationErrors) {
 			customError = errors.AddContext(
@@ -140,8 +139,8 @@ func (c Context) BinaryAttachment(contentType, fileName string, contentLength in
 	return content.Close()
 }
 
-// CustomContext defines an echo middleware for using the custom context.
-func CustomContext(h echo.HandlerFunc) echo.HandlerFunc {
+// ExtendedContext defines an echo middleware for using the extended context.
+func ExtendedContext(h echo.HandlerFunc) echo.HandlerFunc {
 	return func(ec echo.Context) error {
 		c := Context{Context: ec}
 		return h(c)

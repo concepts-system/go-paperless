@@ -1,4 +1,4 @@
-package migrations
+package infrastructure
 
 import (
 	"github.com/jinzhu/gorm"
@@ -9,7 +9,6 @@ var migrations = []*gormigrate.Migration{
 	&migrationV1,
 }
 
-// BuildMigrator builds a migrator for the database instance with the given migrations.
-func BuildMigrator(db *gorm.DB) *gormigrate.Gormigrate {
+func buildMigrator(db *gorm.DB) *gormigrate.Gormigrate {
 	return gormigrate.New(db, gormigrate.DefaultOptions, migrations)
 }

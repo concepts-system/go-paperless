@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/kpango/glg"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/api"
 	"github.com/concepts-system/go-paperless/auth"

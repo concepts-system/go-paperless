@@ -1,9 +1,9 @@
-package auth
+package web
 
 import (
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/concepts-system/go-paperless/application"
 )
 
 type (
@@ -17,14 +17,14 @@ type (
 
 	// AccessTokenSerializer defines functionality for serializing access tokens.
 	AccessTokenSerializer struct {
-		C echo.Context
-		Token
+		C Context
+		*application.Token
 		AccessToken  string
 		RefreshToken string
 	}
 )
 
-// Response returns the API response for a given access token.
+// Response returns the response for a given access token.
 func (s *AccessTokenSerializer) Response() AccessTokenResponse {
 	return AccessTokenResponse{
 		TokenType:    "bearer",

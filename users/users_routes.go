@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/api"
 	"github.com/concepts-system/go-paperless/auth"
