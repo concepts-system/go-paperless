@@ -8,7 +8,7 @@ import (
 
 type (
 	// AccessTokenResponse defines the access token projection returned by API methods.
-	AccessTokenResponse struct {
+	accessTokenResponse struct {
 		TokenType    string `json:"token_type"`
 		AccessToken  string `json:"access_token"`
 		ExpiresIn    int64  `json:"expires_in"`
@@ -16,8 +16,8 @@ type (
 	}
 
 	// AccessTokenSerializer defines functionality for serializing access tokens.
-	AccessTokenSerializer struct {
-		C Context
+	accessTokenSerializer struct {
+		C *context
 		*application.Token
 		AccessToken  string
 		RefreshToken string
@@ -25,8 +25,8 @@ type (
 )
 
 // Response returns the response for a given access token.
-func (s *AccessTokenSerializer) Response() AccessTokenResponse {
-	return AccessTokenResponse{
+func (s *accessTokenSerializer) Response() accessTokenResponse {
+	return accessTokenResponse{
 		TokenType:    "bearer",
 		AccessToken:  s.AccessToken,
 		ExpiresIn:    int64(time.Until(s.Token.Expires) / time.Second),

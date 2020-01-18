@@ -28,3 +28,6 @@
 
 # Linux Build Artifact
 go-paperless
+
+# Go coverage report
+cover.html

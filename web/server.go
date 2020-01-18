@@ -43,7 +43,7 @@ func NewServer(config *config.Configuration) *Server {
 		Format: "${time_rfc3339}\t${method}\t${uri} -> status=${status} [${latency_human}] | ${error}\n",
 	}))
 	server.echo.Use(middleware.Recover())
-	server.echo.Use(ExtendedContext)
+	server.echo.Use(extendedContext)
 
 	return &server
 }

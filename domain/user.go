@@ -31,8 +31,19 @@ type User struct {
 	IsActive bool
 }
 
+// NewUser creates a new, valid user based on the given values.
+func NewUser(user User) *User {
+	return &User{
+		Username: user.Username,
+		Surname:  user.Surname,
+		Forename: user.Forename,
+		IsAdmin:  user.IsAdmin,
+		IsActive: user.IsActive,
+	}
+}
+
 // Roles returns the roles for the given user.
-func (u User) Roles() []Role {
+func (u *User) Roles() []Role {
 	roles := make([]Role, 0)
 
 	if u.IsAdmin {

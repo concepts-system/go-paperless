@@ -26,7 +26,7 @@ const (
 
 // Context extends the standard echo context by API relevant fields.
 type (
-	Context struct {
+	context struct {
 		echo.Context
 		UserID   *uint
 		Username *string
@@ -43,13 +43,13 @@ type (
 
 // IsAuthenticated returns a boolean value indicating whether
 // the given context is authenticated.
-func (c Context) IsAuthenticated() bool {
+func (c *context) IsAuthenticated() bool {
 	return c.UserID != nil
 }
 
 // HasRole returns a boolean value indicating whether the given context
 // claims the given role.
-func (c Context) HasRole(role string) bool {
+func (c *context) HasRole(role string) bool {
 	if !c.IsAuthenticated() {
 		return false
 	}
@@ -65,8 +65,8 @@ func (c Context) HasRole(role string) bool {
 
 // BindPaging tries to derive pagination info from the current request. The method falls back
 // to default values (Offset: 0, Size: 10) if some arguments are missing or wrong.
-func (c Context) BindPaging() PageRequest {
-	pageRequest := PageRequest{}
+func (c *context) BindPaging() pageRequest {
+	pageRequest := pageRequest{}
 	c.Bind(&pageRequest)
 
 	if pageRequest.Offset < 0 {
@@ -74,18 +74,18 @@ func (c Context) BindPaging() PageRequest {
 	}
 
 	if pageRequest.Size <= 0 {
-		pageRequest.Size = DefaultPageSize
-	} else if pageRequest.Size > MaxPageSize {
-		pageRequest.Size = MaxPageSize
+		pageRequest.Size = defaultPageSize
+	} else if pageRequest.Size > maxPageSize {
+		pageRequest.Size = maxPageSize
 	}
 
 	return pageRequest
 }
 
 // Page sends a page response.
-func (c Context) Page(
+func (c *context) Page(
 	status int,
-	page PageRequest,
+	page pageRequest,
 	totalCount int64,
 	data interface{},
 ) error {
@@ -100,7 +100,7 @@ func (c Context) Page(
 }
 
 // BindAndValidate binds and validates the given object from the current context.
-func (c Context) BindAndValidate(i interface{}) error {
+func (c *context) BindAndValidate(i interface{}) error {
 	if err := c.Bind(i); err != nil {
 		return application.BadRequestError.Newf("Invalid request: %s", err.Error())
 	}
@@ -123,7 +123,12 @@ func (c Context) BindAndValidate(i interface{}) error {
 }
 
 // BinaryAttachment sends a binary stream as an attachment with the given content type and disposition.
-func (c Context) BinaryAttachment(contentType, fileName string, contentLength int64, content io.ReadCloser) error {
+func (c *context) BinaryAttachment(
+	contentType,
+	fileName string,
+	contentLength int64,
+	content io.ReadCloser,
+) error {
 	response := c.Response()
 	headers := response.Header()
 
@@ -139,11 +144,11 @@ func (c Context) BinaryAttachment(contentType, fileName string, contentLength in
 	return content.Close()
 }
 
-// ExtendedContext defines an echo middleware for using the extended context.
-func ExtendedContext(h echo.HandlerFunc) echo.HandlerFunc {
+// extendedContext defines an echo middleware for using the extended context.
+func extendedContext(h echo.HandlerFunc) echo.HandlerFunc {
 	return func(ec echo.Context) error {
-		c := Context{Context: ec}
-		return h(c)
+		c := context{Context: ec}
+		return h(&c)
 	}
 }
 

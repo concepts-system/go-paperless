@@ -60,11 +60,11 @@ func (s *authServiceImpl) AuthenticateUserByCredentials(username, password strin
 	user, err := s.users.GetByUsername(domain.Name(username))
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to retrieve user")
+		return nil, errors.Wrap(err, "Failed to read users")
 	}
 
 	if user == nil {
-		return nil, NotFoundError.Newf("No user with username '%s' found", username)
+		return nil, s.badCredentialsError()
 	}
 
 	if err := s.passwordHelper.checkUserPassword(user, password); err != nil {

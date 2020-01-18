@@ -154,13 +154,13 @@ func ensureUserExists(bs *bootstrapper) {
 	}
 
 	glg.Info("No user present; creating default one...")
-	defaultUser := &domain.User{
+	defaultUser := domain.NewUser(domain.User{
 		Username: "admin",
 		Forename: "Default",
 		Surname:  "User",
 		IsAdmin:  true,
 		IsActive: true,
-	}
+	})
 
 	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
 

@@ -38,9 +38,9 @@ func (r authRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 }
 
 func (r authRouter) getToken(ec echo.Context) error {
-	c := ec.(Context)
+	c := ec.(*context)
 
-	validator := NewAuthenticationRequestValidator()
+	validator := newAuthenticationRequestValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
@@ -55,8 +55,8 @@ func (r authRouter) getToken(ec echo.Context) error {
 	}
 }
 
-func (r authRouter) getAccessTokenByPassword(c Context) error {
-	validator := NewPasswordAuthenticationRequestValidator()
+func (r authRouter) getAccessTokenByPassword(c *context) error {
+	validator := newPasswordAuthenticationRequestValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
@@ -73,8 +73,8 @@ func (r authRouter) getAccessTokenByPassword(c Context) error {
 	return r.sendTokenResponse(c, token)
 }
 
-func (r authRouter) getAccessTokenByRefreshToken(c Context) error {
-	validator := NewRefreshTokenAuthenticationRequestValidator()
+func (r authRouter) getAccessTokenByRefreshToken(c *context) error {
+	validator := newRefreshTokenAuthenticationRequestValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r authRouter) getAccessTokenByRefreshToken(c Context) error {
 	return r.sendTokenResponse(c, token)
 }
 
-func (r authRouter) sendTokenResponse(c Context, token *application.Token) error {
+func (r authRouter) sendTokenResponse(c *context, token *application.Token) error {
 	accessToken, err := r.authService.SignAccessToken(token)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (r authRouter) sendTokenResponse(c Context, token *application.Token) error
 		return err
 	}
 
-	serializer := AccessTokenSerializer{
+	serializer := accessTokenSerializer{
 		c,
 		token,
 		accessToken,

@@ -1,51 +1,51 @@
 package web
 
-// AuthenticationRequestValidator defines the validation rules for a general authentication request.
-type AuthenticationRequestValidator struct {
+// authenticationRequestValidator defines the validation rules for a general authentication request.
+type authenticationRequestValidator struct {
 	GrantType string `form:"grant_type" query:"grant_type" validate:"required"`
 }
 
-// NewAuthenticationRequestValidator returns a new instance of the respective validator.
-func NewAuthenticationRequestValidator() AuthenticationRequestValidator {
-	return AuthenticationRequestValidator{}
+// newAuthenticationRequestValidator returns a new instance of the respective validator.
+func newAuthenticationRequestValidator() *authenticationRequestValidator {
+	return &authenticationRequestValidator{}
 }
 
-// PasswordAuthenticationRequestValidator defines the validation rules for an authentication request
+// passwordAuthenticationRequestValidator defines the validation rules for an authentication request
 // with grant type 'password'.
-type PasswordAuthenticationRequestValidator struct {
+type passwordAuthenticationRequestValidator struct {
 	Username string `form:"username" validate:"required"`
 	Password string `form:"password" validate:"required"`
 }
 
 // Bind binds the request to the request model.
-func (validator *AuthenticationRequestValidator) Bind(c Context) error {
+func (validator *authenticationRequestValidator) Bind(c *context) error {
 	return c.BindAndValidate(validator)
 }
 
-// NewPasswordAuthenticationRequestValidator returns a new instance of the respective validator.
-func NewPasswordAuthenticationRequestValidator() PasswordAuthenticationRequestValidator {
-	return PasswordAuthenticationRequestValidator{}
+// newPasswordAuthenticationRequestValidator returns a new instance of the respective validator.
+func newPasswordAuthenticationRequestValidator() passwordAuthenticationRequestValidator {
+	return passwordAuthenticationRequestValidator{}
 }
 
 // Bind binds the request to the request model.
-func (validator *PasswordAuthenticationRequestValidator) Bind(c Context) error {
+func (validator *passwordAuthenticationRequestValidator) Bind(c *context) error {
 	return c.BindAndValidate(validator)
 }
 
-// RefreshTokenAuthenticationRequestValidator defines the validation rules for an authentication request
+// refreshTokenAuthenticationRequestValidator defines the validation rules for an authentication request
 // with grant type 'refresh_token'.
-type RefreshTokenAuthenticationRequestValidator struct {
+type refreshTokenAuthenticationRequestValidator struct {
 	Request struct {
 		RefreshToken string `form:"refresh_token" validate:"required"`
 	}
 }
 
-// NewRefreshTokenAuthenticationRequestValidator returns a new instance of the respective validator.
-func NewRefreshTokenAuthenticationRequestValidator() RefreshTokenAuthenticationRequestValidator {
-	return RefreshTokenAuthenticationRequestValidator{}
+// newRefreshTokenAuthenticationRequestValidator returns a new instance of the respective validator.
+func newRefreshTokenAuthenticationRequestValidator() *refreshTokenAuthenticationRequestValidator {
+	return &refreshTokenAuthenticationRequestValidator{}
 }
 
 // Bind binds the request to the request model.
-func (validator *RefreshTokenAuthenticationRequestValidator) Bind(c Context) error {
+func (validator *refreshTokenAuthenticationRequestValidator) Bind(c *context) error {
 	return c.BindAndValidate(validator)
 }

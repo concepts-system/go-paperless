@@ -54,8 +54,8 @@ func (t *tokenQueryParameterExtractor) ExtractToken(r *http.Request) (string, er
 /* Middleware */
 
 type (
-	// Filter defines a function type for defining a custom authorization condition.
-	Filter = func(userID uint, username string, roles []string) bool
+	// filter defines a function type for defining a custom authorization condition.
+	filter = func(userID uint, username string, roles []string) bool
 
 	// AuthMiddleware defines which types of filters are provided by the auth middleware.
 	AuthMiddleware struct {
@@ -71,11 +71,11 @@ func NewAuthMiddleware(tokenKeyResolver application.TokenKeyResolver) *AuthMiddl
 
 // Require defines a middleware which checks for a valid authentication token
 // and uses to custom function to authorize the token.
-func (auth *AuthMiddleware) Require(filter Filter) echo.MiddlewareFunc {
+func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 	return func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(ec echo.Context) error {
-			c, _ := ec.(Context)
-			clearAuthContext(&c)
+			c, _ := ec.(*context)
+			clearAuthContext(c)
 
 			// Verify token
 			token, err := request.ParseFromRequest(
@@ -122,7 +122,7 @@ func (auth *AuthMiddleware) Require(filter Filter) echo.MiddlewareFunc {
 				}
 
 				// Fill auth context and continue to next handler
-				setAuthContext(&c, userID, username, claimedRoles)
+				setAuthContext(c, userID, username, claimedRoles)
 				return h(c)
 			}
 
@@ -135,7 +135,7 @@ func (auth *AuthMiddleware) Require(filter Filter) echo.MiddlewareFunc {
 // RequireAuthorization returns a middleware handler function for protecting
 // end-points needing user authentication.
 // Any valid user ID claim will pass the middleware.
-func (auth AuthMiddleware) RequireAuthorization() echo.MiddlewareFunc {
+func (auth *AuthMiddleware) RequireAuthorization() echo.MiddlewareFunc {
 	return auth.Require(func(_ uint, username string, _ []string) bool {
 		return strings.TrimSpace(username) != ""
 	})
@@ -144,7 +144,7 @@ func (auth AuthMiddleware) RequireAuthorization() echo.MiddlewareFunc {
 // RequireRoles returns a middleware handler function for protecting end-points
 // needing user authentication. The authenticated user needs also the given set
 // of roles to get access granted.
-func (auth AuthMiddleware) RequireRoles(requiredRoles ...string) echo.MiddlewareFunc {
+func (auth *AuthMiddleware) RequireRoles(requiredRoles ...string) echo.MiddlewareFunc {
 	return auth.Require(func(_ uint, _ string, roles []string) bool {
 		if len(requiredRoles) == 0 {
 			return true
@@ -172,7 +172,7 @@ func (auth AuthMiddleware) RequireRoles(requiredRoles ...string) echo.Middleware
 // RequireAdminRole returns a middleware handler function for protecting
 // end-points needing user authentication.
 // Only users having with 'ADMIN' role are allowed to access the end-point.
-func (auth AuthMiddleware) RequireAdminRole() echo.MiddlewareFunc {
+func (auth *AuthMiddleware) RequireAdminRole() echo.MiddlewareFunc {
 	return auth.RequireRoles(string(domain.RoleAdmin))
 }
 
@@ -194,13 +194,13 @@ func unwrapClaims(rawClaims []interface{}) []string {
 	return claims
 }
 
-func clearAuthContext(c *Context) {
+func clearAuthContext(c *context) {
 	c.UserID = nil
 	c.Username = nil
 	c.Roles = nil
 }
 
-func setAuthContext(c *Context, userID uint, username string, roles []string) {
+func setAuthContext(c *context, userID uint, username string, roles []string) {
 	c.UserID = &userID
 	c.Username = &username
 	c.Roles = roles
