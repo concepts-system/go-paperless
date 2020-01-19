@@ -20,7 +20,10 @@ type UserService interface {
 	CreateNewUser(user *domain.User, password string) (*domain.User, error)
 
 	// Update user updates all possible field of the given user.
-	UpdateUser(user *domain.User) (*domain.User, error)
+	UpdateUser(user *domain.User, password *string) (*domain.User, error)
+
+	// DeleteUser deletes the user with the given ID.
+	DeleteUser(userID domain.Identifier) error
 
 	// UpdateUserPassword updates the password of the user with the given ID.
 	UpdateUserPassword(userID uint, currentPassword, newPassword string) error
@@ -73,7 +76,10 @@ func (s *userServiceImpl) CreateNewUser(
 	return user, nil
 }
 
-func (s *userServiceImpl) UpdateUser(user *domain.User) (*domain.User, error) {
+func (s *userServiceImpl) UpdateUser(
+	user *domain.User,
+	password *string,
+) (*domain.User, error) {
 	originalUser, err := s.expectUserWithIDExists(user.ID)
 	if err != nil {
 		return nil, err
@@ -88,8 +94,14 @@ func (s *userServiceImpl) UpdateUser(user *domain.User) (*domain.User, error) {
 	originalUser.Username = user.Username
 	originalUser.Forename = user.Forename
 	originalUser.Surname = user.Surname
+	originalUser.IsActive = user.IsActive
+	originalUser.IsAdmin = user.IsAdmin
 
-	user, err = s.users.Save(user)
+	if password != nil {
+		s.passwordHelper.setUserPassword(originalUser, *password)
+	}
+
+	user, err = s.users.Save(originalUser)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to update user")
 	}
@@ -115,6 +127,21 @@ func (s *userServiceImpl) UpdateUserPassword(userID uint, currentPassword, newPa
 
 	return nil
 }
+
+func (s *userServiceImpl) DeleteUser(userID domain.Identifier) error {
+	user, err := s.users.GetByID(userID)
+	if err != nil {
+		return errors.Wrap(err, "Failed to retrieve users")
+	}
+
+	if user == nil {
+		return nil
+	}
+
+	return s.users.Delete(user)
+}
+
+/* Helper Methods */
 
 func (s *userServiceImpl) expectUserWithIDExists(userID domain.Identifier) (*domain.User, error) {
 	user, err := s.users.GetByID(userID)

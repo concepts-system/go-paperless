@@ -46,15 +46,17 @@ func (v *userValidator) Bind(c *context) error {
 		return err
 	}
 
-	if v.passwordRequired && v.Password == nil {
-		err := application.BadRequestError.New("Validation failed")
-		return errors.AddContext(err, "password", "required")
-	} else if *v.Password != "" && len(*v.Password) < 8 {
-		err := application.BadRequestError.New("Validation failed")
-		return errors.AddContext(err, "password", "min")
-	} else if *v.Password != "" && len(*v.Password) > 255 {
-		err := application.BadRequestError.New("Validation failed")
-		return errors.AddContext(err, "password", "max")
+	if v.passwordRequired {
+		if v.Password == nil {
+			err := application.BadRequestError.New("Validation failed")
+			return errors.AddContext(err, "password", "required")
+		} else if *v.Password != "" && len(*v.Password) < 8 {
+			err := application.BadRequestError.New("Validation failed")
+			return errors.AddContext(err, "password", "min")
+		} else if *v.Password != "" && len(*v.Password) > 255 {
+			err := application.BadRequestError.New("Validation failed")
+			return errors.AddContext(err, "password", "max")
+		}
 	}
 
 	v.user.Username = domain.Name(v.Username)
@@ -68,10 +70,11 @@ func (v *userValidator) Bind(c *context) error {
 
 // newUserValidator constructs a validator with default values.
 func newUserValidator(passwordRequired bool) *userValidator {
-	validator := userValidator{}
-	validator.IsActive = true
-	validator.IsAdmin = false
-	return &validator
+	return &userValidator{
+		passwordRequired: passwordRequired,
+		IsActive:         true,
+		IsAdmin:          false,
+	}
 }
 
 // newUserValidatorOf constructs a validator with the values from the given user model.

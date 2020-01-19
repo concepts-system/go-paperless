@@ -217,5 +217,5 @@ func errorUnauthorized() error {
 }
 
 func errorInsufficientPermission() error {
-	return application.UnauthorizedError.New("Insufficient permissions")
+	return application.ForbiddenError.New("Insufficient permissions")
 }

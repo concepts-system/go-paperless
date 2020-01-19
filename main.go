@@ -58,13 +58,6 @@ func main() {
 	prepareDatabase(bs)
 	defer bs.database.Close()
 
-	// glg.Info("Initializing job workers...")
-	// initializeWorkers()
-
-	// glg.Info("Preparing document index...")
-	// documents.PrepareIndex()
-	// defer documents.GetIndex().Close()
-
 	setupDependencies(bs)
 	initializeServer(bs)
 	ensureUserExists(bs)
@@ -166,7 +159,7 @@ func ensureUserExists(bs *bootstrapper) {
 		IsActive: true,
 	})
 
-	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "password")
+	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
 
 	if err != nil {
 		glg.Fatalf("Error while creating default user: %v", err)

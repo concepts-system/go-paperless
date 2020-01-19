@@ -2,6 +2,10 @@ package web
 
 import (
 	"net/http"
+	"strconv"
+
+	"github.com/concepts-system/go-paperless/domain"
+	"github.com/concepts-system/go-paperless/errors"
 
 	"github.com/labstack/echo/v4"
 
@@ -30,13 +34,15 @@ func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	userGroup.PUT("/me", r.updateCurrentUser)
 	userGroup.PUT("/me/password", r.updateCurrentUsersPassword)
 
-	// usersGroup := r.Group("/users", auth.RequireAdminRole())
-	// usersGroup.GET("", r.findUsers)
-	// usersGroup.POST("", r.createUser)
-	// usersGroup.GET("/:id", r.getUser)
-	// usersGroup.PUT("/:id", r.updateUser)
-	// usersGroup.DELETE("/:id", r.deleteUser)
+	usersGroup := apiGroup.Group("/users", auth.RequireAdminRole())
+	usersGroup.GET("", r.findUsers)
+	usersGroup.POST("", r.createUser)
+	usersGroup.GET("/:id", r.getUser)
+	usersGroup.PUT("/:id", r.updateUser)
+	usersGroup.DELETE("/:id", r.deleteUser)
 }
+
+/* Handlers */
 
 func (r *userRouter) getCurrentUser(ec echo.Context) error {
 	c, _ := ec.(*context)
@@ -63,7 +69,10 @@ func (r *userRouter) updateCurrentUser(ec echo.Context) error {
 		return err
 	}
 
-	user, err = r.userService.UpdateUser(&validator.user)
+	validator.user.IsActive = user.IsActive
+	validator.user.IsAdmin = user.IsAdmin
+
+	user, err = r.userService.UpdateUser(&validator.user, nil)
 	if err != nil {
 		return err
 	}
@@ -93,123 +102,128 @@ func (r *userRouter) updateCurrentUsersPassword(ec echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// func (r *userRouter) getUser(c echo.Context) error {
-// 	id, err := bindUserID(c)
-// 	if err != nil {
-// 		return err
-// 	}
+func (r *userRouter) findUsers(ec echo.Context) error {
+	c, _ := ec.(*context)
+	pr := c.BindPaging()
+	users, totalCount, err := r.userService.FindUsers(pr.ToDomainPageRequest())
 
-// 	user, err := GetUserByID(uint(id))
-// 	if err != nil {
-// 		return err
-// 	}
+	if err != nil {
+		return err
+	}
 
-// 	serializer := UserSerializer{c, user}
-// 	return c.JSON(http.StatusOK, serializer.Response())
-// }
+	serializer := userListSerializer{c, users}
+	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
+}
 
-// func (r *userRouter) createUser(ec echo.Context) error {
-// 	c, _ := ec.(*context)
-// 	validator := NewUserModelValidator()
-// 	if err := validator.Bind(c); err != nil {
-// 		return err
-// 	}
+func (r *userRouter) getUser(c echo.Context) error {
+	id, err := r.bindUserID(c)
+	if err != nil {
+		return err
+	}
 
-// 	if err := ensureUsernameIsNotTaken(validator.Username); err != nil {
-// 		return err
-// 	}
+	user, err := r.userService.GetUserByID(uint(id))
+	if err != nil {
+		return err
+	}
 
-// 	if err := validator.userModel.Create(); err != nil {
-// 		return err
-// 	}
+	serializer := userSerializer{c, user}
+	return c.JSON(http.StatusOK, serializer.Response())
+}
 
-// 	serializer := UserSerializer{c, &validator.userModel}
-// 	return c.JSON(http.StatusCreated, serializer.Response())
-// }
+func (r *userRouter) createUser(ec echo.Context) error {
+	c, _ := ec.(*context)
 
-// func (r *userRouter) findUsers(ec echo.Context) error {
-// 	c, _ := ec.(*context)
-// 	pr := c.BindPaging()
-// 	users, totalCount, err := Find(pr)
+	validator := newUserValidator(true)
+	if err := validator.Bind(c); err != nil {
+		return err
+	}
 
-// 	if err != nil {
-// 		return err
-// 	}
+	user, err := r.userService.CreateNewUser(
+		&validator.user,
+		*validator.Password,
+	)
 
-// 	serializer := UserListSerializer{c, users}
-// 	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
-// }
+	if err != nil {
+		return err
+	}
 
-// func (r *userRouter) updateUser(ec echo.Context) error {
-// 	c, _ := ec.(*context)
-// 	id, err := bindUserID(c)
-// 	if err != nil {
-// 		return err
-// 	}
+	serializer := userSerializer{c, user}
+	return c.JSON(http.StatusCreated, serializer.Response())
+}
 
-// 	user, err := GetUserByID(uint(id))
-// 	if err != nil {
-// 		return err
-// 	}
+func (r *userRouter) updateUser(ec echo.Context) error {
+	c, _ := ec.(*context)
 
-// 	validator := NewUserModelValidatorFillWith(*user)
-// 	if err := validator.Bind(c); err != nil {
-// 		return err
-// 	}
+	id, err := r.bindUserID(c)
+	if err != nil {
+		return err
+	}
 
-// 	if validator.Username != validator.userModel.Username {
-// 		if err := ensureUsernameIsNotTaken(validator.Username); err != nil {
-// 			return err
-// 		}
-// 	}
+	user, err := r.userService.GetUserByID(uint(id))
+	if err != nil {
+		return err
+	}
 
-// 	if err := validator.userModel.Save(); err != nil {
-// 		return err
-// 	}
+	validator := newUserValidatorOf(user, false)
+	if err := validator.Bind(c); err != nil {
+		return err
+	}
 
-// 	serializer := UserSerializer{c, &validator.userModel}
-// 	return c.JSON(http.StatusOK, serializer.Response())
-// }
+	if r.isCurrentUserID(c, validator.user.ID) {
+		if user.IsActive != validator.user.IsActive {
+			err := application.BadRequestError.New("User may not alter his active state")
+			return errors.AddContext(err, "isActive", "const")
+		}
 
-// func (r *userRouter) deleteUser(c echo.Context) error {
-// 	id, err := bindUserID(c)
-// 	if err != nil {
-// 		return err
-// 	}
+		if user.IsAdmin != validator.user.IsAdmin {
+			err := application.BadRequestError.New("User may not alter his own privileges")
+			return errors.AddContext(err, "isAdmin", "const")
+		}
+	}
 
-// 	user, err := GetUserByID(uint(id))
-// 	if err != nil {
-// 		return err
-// 	}
+	user, err = r.userService.UpdateUser(&validator.user, validator.Password)
+	if err != nil {
+		return err
+	}
 
-// 	if err := user.Delete(); err != nil {
-// 		return err
-// 	}
+	serializer := userSerializer{c, user}
+	return c.JSON(http.StatusOK, serializer.Response())
+}
 
-// 	return c.NoContent(http.StatusNoContent)
-// }
+func (r *userRouter) deleteUser(ec echo.Context) error {
+	c, _ := ec.(*context)
+	id, err := r.bindUserID(c)
+	if err != nil {
+		return err
+	}
 
-// func (r *userRouter) ensureUsernameIsNotTaken(username string) error {
-// 	_, err := GetUserByUsername(username)
+	if r.isCurrentUserID(c, domain.Identifier(id)) {
+		return application.BadRequestError.New("User may not delete himself")
+	}
 
-// 	if err == nil {
-// 		err := errors.Conflict.Newf("Username '%s' already taken", username)
-// 		return errors.AddContext(err, "username", "unique")
-// 	}
+	if err = r.userService.DeleteUser(domain.Identifier(id)); err != nil {
+		return err
+	}
 
-// 	if errors.GetType(err) != errors.NotFound {
-// 		return err
-// 	}
+	return c.NoContent(http.StatusNoContent)
+}
 
-// 	return nil
-// }
+/* Helper Methods */
 
-// func (r *userRouter) bindUserID(c echo.Context) (uint, error) {
-// 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func (r *userRouter) bindUserID(c echo.Context) (uint, error) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 
-// 	if err != nil || id <= 0 {
-// 		return 0, errors.BadRequest.New("User ID has to be a positive integer")
-// 	}
+	if err != nil || id <= 0 {
+		return 0, application.BadRequestError.New("User ID has to be a positive integer")
+	}
 
-// 	return uint(id), nil
-// }
+	return uint(id), nil
+}
+
+func (r *userRouter) isCurrentUserID(c *context, id domain.Identifier) bool {
+	if *c.UserID == uint(id) {
+		return true
+	}
+
+	return false
+}

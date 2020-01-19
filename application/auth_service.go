@@ -58,12 +58,11 @@ func NewAuthService(
 
 func (s *authServiceImpl) AuthenticateUserByCredentials(username, password string) (*Token, error) {
 	user, err := s.users.GetByUsername(domain.Name(username))
-
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to read users")
+		return nil, errors.Wrap(err, "Failed to retrieve users")
 	}
 
-	if user == nil {
+	if user == nil || !user.IsActive {
 		return nil, s.badCredentialsError()
 	}
 
@@ -85,6 +84,15 @@ func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, e
 
 		if !ok || userID < 0 {
 			return nil, UnauthorizedError.New("Invalid refressh token: Invalid user ID claim")
+		}
+
+		user, err := s.users.GetByID(domain.Identifier(uint(userID)))
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to read users")
+		}
+
+		if user == nil || !user.IsActive {
+			return nil, s.badCredentialsError()
 		}
 
 		token, err := s.issueTokenForUser(uint(userID))

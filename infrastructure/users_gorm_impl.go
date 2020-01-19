@@ -107,7 +107,7 @@ func (u usersGormImpl) Save(user *domain.User) (*domain.User, error) {
 }
 
 func (u usersGormImpl) Delete(user *domain.User) error {
-	return u.db.Delete(u).Error
+	return u.db.Delete(user).Error
 }
 
 func (u *usersGormImpl) mapUserModelToDomainEntity(user *userModel) *domain.User {
