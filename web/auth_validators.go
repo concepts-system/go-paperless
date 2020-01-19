@@ -23,8 +23,8 @@ func (validator *authenticationRequestValidator) Bind(c *context) error {
 }
 
 // newPasswordAuthenticationRequestValidator returns a new instance of the respective validator.
-func newPasswordAuthenticationRequestValidator() passwordAuthenticationRequestValidator {
-	return passwordAuthenticationRequestValidator{}
+func newPasswordAuthenticationRequestValidator() *passwordAuthenticationRequestValidator {
+	return &passwordAuthenticationRequestValidator{}
 }
 
 // Bind binds the request to the request model.

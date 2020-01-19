@@ -125,10 +125,14 @@ func initializeServer(bs *bootstrapper) {
 func registerRouters(bs *bootstrapper) {
 	// TODO: Register auth, user and document routes here
 	bs.server.Register(
+		// Auth routes
 		web.NewAuthRouter(
 			bs.authService,
 			application.ConfigTokenKeyResolver(bs.config),
 		),
+
+		// User routes
+		web.NewUserRouter(bs.userService),
 	)
 }
 
@@ -162,7 +166,7 @@ func ensureUserExists(bs *bootstrapper) {
 		IsActive: true,
 	})
 
-	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
+	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "password")
 
 	if err != nil {
 		glg.Fatalf("Error while creating default user: %v", err)

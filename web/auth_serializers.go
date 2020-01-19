@@ -25,7 +25,7 @@ type (
 )
 
 // Response returns the response for a given access token.
-func (s *accessTokenSerializer) Response() accessTokenResponse {
+func (s accessTokenSerializer) Response() accessTokenResponse {
 	return accessTokenResponse{
 		TokenType:    "bearer",
 		AccessToken:  s.AccessToken,

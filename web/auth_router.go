@@ -32,12 +32,12 @@ func NewAuthRouter(
 }
 
 // DefineRoutes defines the routes for auth functionality.
-func (r authRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
+func (r *authRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	authgroup := group.Group("/auth")
 	authgroup.POST("/token", r.getToken)
 }
 
-func (r authRouter) getToken(ec echo.Context) error {
+func (r *authRouter) getToken(ec echo.Context) error {
 	c := ec.(*context)
 
 	validator := newAuthenticationRequestValidator()
@@ -55,7 +55,7 @@ func (r authRouter) getToken(ec echo.Context) error {
 	}
 }
 
-func (r authRouter) getAccessTokenByPassword(c *context) error {
+func (r *authRouter) getAccessTokenByPassword(c *context) error {
 	validator := newPasswordAuthenticationRequestValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
@@ -73,7 +73,7 @@ func (r authRouter) getAccessTokenByPassword(c *context) error {
 	return r.sendTokenResponse(c, token)
 }
 
-func (r authRouter) getAccessTokenByRefreshToken(c *context) error {
+func (r *authRouter) getAccessTokenByRefreshToken(c *context) error {
 	validator := newRefreshTokenAuthenticationRequestValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
@@ -87,7 +87,7 @@ func (r authRouter) getAccessTokenByRefreshToken(c *context) error {
 	return r.sendTokenResponse(c, token)
 }
 
-func (r authRouter) sendTokenResponse(c *context, token *application.Token) error {
+func (r *authRouter) sendTokenResponse(c *context, token *application.Token) error {
 	accessToken, err := r.authService.SignAccessToken(token)
 	if err != nil {
 		return err
