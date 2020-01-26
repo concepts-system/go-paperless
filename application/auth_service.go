@@ -1,6 +1,7 @@
 package application
 
 import (
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -8,6 +9,19 @@ import (
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
+)
+
+const (
+	// RoleUser defines the role every user belong to.
+	RoleUser = "user"
+	// RoleAdmin defines the role only admin users belong to.
+	RoleAdmin = "admin"
+
+	// TokenScopeAPI defines the scope for granting general API access.
+	TokenScopeAPI = "api"
+	// TokenScopeAuthRefresh defines the scope for granting refresh of
+	// authentication.
+	TokenScopeAuthRefresh = "auth:refresh"
 )
 
 // AuthService defines an application service for authentication and
@@ -32,6 +46,18 @@ type AuthService interface {
 	// SignRefreshToken signs the given token and returns the refresh token
 	// encoded as a JWT.
 	SignRefreshToken(token *Token) (string, error)
+
+	// ExtractScopes extracts the token scopes from the given set of claims.
+	ExtractScopes(claims jwt.MapClaims) []string
+
+	// ExtractUserID extracts the user ID from the given set of claims.
+	ExtractUserID(claims jwt.MapClaims) *uint
+
+	// ExtractUsername extracts the username from the given set of claims.
+	ExtractUsername(claims jwt.MapClaims) *string
+
+	// ExtractRoles extracts the user's roles from the given set of claims.
+	ExtractRoles(claims jwt.MapClaims) []string
 }
 
 type authServiceImpl struct {
@@ -70,7 +96,7 @@ func (s *authServiceImpl) AuthenticateUserByCredentials(username, password strin
 		return nil, s.badCredentialsError()
 	}
 
-	return s.userToken(*user), nil
+	return s.userToken(user), nil
 }
 
 func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, error) {
@@ -80,10 +106,14 @@ func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, e
 	}
 
 	if claims, ok := refreshToken.Claims.(jwt.MapClaims); ok && refreshToken.Valid {
+		if !s.claimsScope(claims, TokenScopeAuthRefresh) {
+			return nil, UnauthorizedError.Newf("Invalid token: Missing scope '%s'", TokenScopeAuthRefresh)
+		}
+
 		userID, ok := claims[TokenClaimUserID].(float64)
 
 		if !ok || userID < 0 {
-			return nil, UnauthorizedError.New("Invalid refressh token: Invalid user ID claim")
+			return nil, UnauthorizedError.New("Invalid token: Invalid user ID claim")
 		}
 
 		user, err := s.users.GetByID(domain.Identifier(uint(userID)))
@@ -113,10 +143,10 @@ func (s *authServiceImpl) SignAccessToken(token *Token) (string, error) {
 		token.GetAccessTokenClaims(
 			host,
 			host,
+			TokenScopeAPI,
 		),
 	)
 
-	// Sign and get the encoded token as a string using the secret
 	accessToken, err := jwtToken.SignedString(s.config.GetJWTKey())
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to sign access token: %s", err.Error())
@@ -133,16 +163,79 @@ func (s *authServiceImpl) SignRefreshToken(token *Token) (string, error) {
 			token.UserID,
 			host,
 			host,
+			TokenScopeAuthRefresh,
 		),
 	)
 
-	// Sign and get the encoded token as a string using the secret
 	refreshToken, err := jwtToken.SignedString(s.config.GetJWTKey())
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to sign refresh token: %s", err.Error())
 	}
 
 	return refreshToken, nil
+}
+
+func (s *authServiceImpl) ExtractScopes(claims jwt.MapClaims) []string {
+	rawScope, ok := claims[TokenClaimScopes].(string)
+	if !ok {
+		return nil
+	}
+
+	rawScopes := strings.Split(rawScope, " ")
+	scopes := make([]string, len(rawScopes))
+	for i, scope := range rawScopes {
+		scopes[i] = strings.Trim(scope, " \t")
+	}
+
+	return scopes
+}
+
+func (s *authServiceImpl) ExtractUserID(claims jwt.MapClaims) *uint {
+	if id, ok := claims[TokenClaimUserID].(float64); ok {
+		userID := uint(id)
+		return &userID
+	}
+
+	return nil
+}
+
+func (s *authServiceImpl) ExtractUsername(claims jwt.MapClaims) *string {
+	if id, ok := claims[TokenClaimSubject].(string); ok {
+		return &id
+	}
+
+	return nil
+}
+
+func (s *authServiceImpl) ExtractRoles(claims jwt.MapClaims) []string {
+	rawRoles, ok := claims[TokenClaimRoles].([]interface{})
+	if !ok {
+		return nil
+	}
+
+	roles := make([]string, len(rawRoles))
+	for i, role := range rawRoles {
+		var ok bool
+		roles[i], ok = role.(string)
+
+		if !ok {
+			return nil
+		}
+	}
+
+	return roles
+}
+
+/* Helper Methods */
+
+func (s *authServiceImpl) claimsScope(claims jwt.MapClaims, scope string) bool {
+	for _, claimedScope := range s.ExtractScopes(claims) {
+		if claimedScope == scope {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *authServiceImpl) issueTokenForUser(userID uint) (*Token, error) {
@@ -155,14 +248,14 @@ func (s *authServiceImpl) issueTokenForUser(userID uint) (*Token, error) {
 		return nil, NotFoundError.Newf("No user with ID %d found", userID)
 	}
 
-	return s.userToken(*user), nil
+	return s.userToken(user), nil
 }
 
-func (s *authServiceImpl) userToken(user domain.User) *Token {
+func (s *authServiceImpl) userToken(user *domain.User) *Token {
 	return &Token{
 		UserID:         uint(user.ID),
 		Username:       string(user.Username),
-		Roles:          s.unwrapRoles(user.Roles()),
+		Roles:          s.unwrapRoles(user),
 		Expires:        time.Now().Add(s.config.GetJWTExpirationTime()),
 		RefreshExpires: time.Now().Add(s.config.GetJWTRefreshTime()),
 	}
@@ -179,11 +272,11 @@ func (s *authServiceImpl) getSigningMethodHMAC() *jwt.SigningMethodHMAC {
 	}
 }
 
-func (s *authServiceImpl) unwrapRoles(userRoles []domain.Role) []string {
-	roles := make([]string, len(userRoles))
+func (s *authServiceImpl) unwrapRoles(user *domain.User) []string {
+	roles := []string{RoleUser}
 
-	for i, role := range userRoles {
-		roles[i] = string(role)
+	if user.IsAdmin {
+		roles = append(roles, RoleAdmin)
 	}
 
 	return roles

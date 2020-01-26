@@ -3,8 +3,6 @@ package application
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -15,6 +13,8 @@ const (
 	TokenClaimUserID = "user_id"
 	// TokenClaimRoles defines the token claim holding the user's roles.
 	TokenClaimRoles = "roles"
+	// TokenClaimScopes defines the token claim holding the token's scopes.
+	TokenClaimScopes = "scope"
 )
 
 type (
@@ -30,6 +30,7 @@ type (
 	// AccessTokenClaims defines all JWT (standard and custom) claims contained in an accesss tokens.
 	AccessTokenClaims struct {
 		jwt.StandardClaims
+		Scope  string   `json:"scope"`
 		UserID uint     `json:"user_id"`
 		Roles  []string `json:"roles"`
 	}
@@ -37,18 +38,17 @@ type (
 	// RefreshTokenClaims defines all JWT claims contained in a refresh token.
 	RefreshTokenClaims struct {
 		jwt.StandardClaims
-		UserID uint `json:"user_id"`
+		Scope  string `json:"scope"`
+		UserID uint   `json:"user_id"`
 	}
 )
 
 // GetAccessTokenClaims returns the JWT accesss token claims for the given Token instance.
-func (t *Token) GetAccessTokenClaims(issuer, audience string) AccessTokenClaims {
+func (t *Token) GetAccessTokenClaims(issuer, audience, scope string) AccessTokenClaims {
 	now := time.Now()
-	id, _ := uuid.NewRandom()
 
 	return AccessTokenClaims{
 		StandardClaims: jwt.StandardClaims{
-			Id:        id.String(),
 			Issuer:    issuer,
 			Audience:  audience,
 			Subject:   t.Username,
@@ -57,13 +57,14 @@ func (t *Token) GetAccessTokenClaims(issuer, audience string) AccessTokenClaims 
 			ExpiresAt: t.Expires.Unix(),
 		},
 
+		Scope:  scope,
 		UserID: t.UserID,
 		Roles:  t.Roles,
 	}
 }
 
 // GetRefreshTokenClaims returns the JWT refresh token claims for the given Token instance.
-func (t *Token) GetRefreshTokenClaims(userID uint, issuer, audience string) RefreshTokenClaims {
+func (t *Token) GetRefreshTokenClaims(userID uint, issuer, audience, scope string) RefreshTokenClaims {
 	now := time.Now()
 
 	return RefreshTokenClaims{
@@ -76,14 +77,16 @@ func (t *Token) GetRefreshTokenClaims(userID uint, issuer, audience string) Refr
 			ExpiresAt: t.RefreshExpires.Unix(),
 		},
 
+		Scope:  scope,
 		UserID: userID,
 	}
 }
 
-// GrantsRole returns a boolean value indicating whether the token instance grants the given role.
-func (t *Token) GrantsRole(role string) bool {
+// GrantsGroupMembership returns a boolean value indicating whether the token
+// instance grants the given role.
+func (t *Token) GrantsGroupMembership(group string) bool {
 	for _, r := range t.Roles {
-		if r == role {
+		if r == group {
 			return true
 		}
 	}

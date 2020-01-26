@@ -6,16 +6,15 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
+	"github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/application"
-	"github.com/concepts-system/go-paperless/domain"
 )
 
 const (
-	authorizationHeader        = "Authorization"
+	authorizationHeader        = echo.HeaderAuthorization
 	authorizationBearerPrefix  = "Bearer "
-	authorizationValueName     = "access_token"
 	authorizationParameterName = "_token"
 )
 
@@ -43,7 +42,6 @@ var authorizationHeaderExtractor = &request.PostExtractionFilter{
 
 var tokenExtractor = &request.MultiExtractor{
 	authorizationHeaderExtractor,
-	request.ArgumentExtractor{authorizationValueName},
 	&tokenQueryParameterExtractor{authorizationParameterName},
 }
 
@@ -55,18 +53,46 @@ func (t *tokenQueryParameterExtractor) ExtractToken(r *http.Request) (string, er
 
 type (
 	// filter defines a function type for defining a custom authorization condition.
-	filter = func(userID uint, username string, roles []string) bool
+	filter = func(c *context) bool
 
 	// AuthMiddleware defines which types of filters are provided by the auth middleware.
 	AuthMiddleware struct {
-		TokenKeyResolver application.TokenKeyResolver
+		authService      application.AuthService
+		tokenKeyResolver application.TokenKeyResolver
 	}
 )
 
 // NewAuthMiddleware creates a new auth middleware using the given
-// token key resolver.
-func NewAuthMiddleware(tokenKeyResolver application.TokenKeyResolver) *AuthMiddleware {
-	return &AuthMiddleware{TokenKeyResolver: tokenKeyResolver}
+// token key resolver and auth service.
+func NewAuthMiddleware(
+	authService application.AuthService,
+	tokenKeyResolver application.TokenKeyResolver,
+) *AuthMiddleware {
+	return &AuthMiddleware{
+		authService:      authService,
+		tokenKeyResolver: tokenKeyResolver,
+	}
+}
+
+func (auth *AuthMiddleware) authenticateRequest(c *context) error {
+	glg.Debug("Authenticating request")
+	auth.clearAuthContext(c)
+
+	token, err := request.ParseFromRequest(
+		c.Request(),
+		tokenExtractor,
+		auth.tokenKeyResolver,
+	)
+
+	if err != nil || !token.Valid {
+		return application.UnauthorizedError.Newf(
+			"Invalid token: %s",
+			err.Error(),
+		)
+	}
+
+	auth.extractClaims(c, token)
+	return nil
 }
 
 // Require defines a middleware which checks for a valid authentication token
@@ -75,147 +101,108 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 	return func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(ec echo.Context) error {
 			c, _ := ec.(*context)
-			clearAuthContext(c)
 
-			// Verify token
-			token, err := request.ParseFromRequest(
-				c.Request(),
-				tokenExtractor,
-				auth.TokenKeyResolver,
-			)
-
-			// Token is invalid
-			if err != nil {
-				return application.UnauthorizedError.Newf("Invalid access token: %s", err.Error())
+			if !c.IsAuthenticated() {
+				auth.authenticateRequest(c)
 			}
 
-			// Extract and verify claims
-			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				// Verify user ID claim
-				id, ok := claims[application.TokenClaimUserID].(float64)
-
-				if !ok || id <= 0 {
-					return errorInvalidToken()
-				}
-
-				userID := uint(id)
-
-				// Verify username claim
-				username, ok := claims[application.TokenClaimSubject].(string)
-
-				if !ok {
-					return errorInvalidToken()
-				}
-
-				// Verify roles claim
-				var rawClaims []interface{}
-				rawClaims, ok = claims[application.TokenClaimRoles].([]interface{})
-				claimedRoles := unwrapClaims(rawClaims)
-
-				if claimedRoles == nil {
-					return errorInsufficientPermission()
-				}
-
-				// Verify authorization condition
-				if authorized := filter(userID, username, claimedRoles); !authorized {
-					return errorInsufficientPermission()
-				}
-
-				// Fill auth context and continue to next handler
-				setAuthContext(c, userID, username, claimedRoles)
-				return h(c)
+			if authorized := filter(c); !authorized {
+				return auth.errorForbidden()
 			}
 
-			// Fallback to unauthorized
-			return errorUnauthorized()
+			return h(c)
 		}
 	}
 }
 
-// RequireAuthorization returns a middleware handler function for protecting
+// RequireAuthentication returns a middleware handler function for protecting
 // end-points needing user authentication.
+//
 // Any valid user ID claim will pass the middleware.
-func (auth *AuthMiddleware) RequireAuthorization() echo.MiddlewareFunc {
-	return auth.Require(func(_ uint, username string, _ []string) bool {
-		return strings.TrimSpace(username) != ""
+func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
+	return auth.Require(func(c *context) bool {
+		glg.Debugf("Checking for user authentication")
+		return c.IsAuthenticated()
 	})
 }
 
-// RequireRoles returns a middleware handler function for protecting end-points
-// needing user authentication. The authenticated user needs also the given set
-// of roles to get access granted.
-func (auth *AuthMiddleware) RequireRoles(requiredRoles ...string) echo.MiddlewareFunc {
-	return auth.Require(func(_ uint, _ string, roles []string) bool {
-		if len(requiredRoles) == 0 {
-			return true
-		}
+// RequireScope returns a middleware handler function for protecting end-points
+// authentication. At least one of the given scopes needs to be granted in order
+// to pass.
+func (auth *AuthMiddleware) RequireScope(requiredScopes ...string) echo.MiddlewareFunc {
+	return auth.Require(func(c *context) bool {
+		glg.Debugf("Checking for scope: '%s'", strings.Join(requiredScopes, " "))
 
-		// Check if each required role is claimed
-		for requiredRole := range requiredRoles {
-			hasRequiredRole := false
-
-			for claimedRole := range roles {
-				if requiredRole == claimedRole {
-					hasRequiredRole = true
+		for _, requiredScope := range requiredScopes {
+			for _, claimedScope := range c.Scopes {
+				if requiredScope == claimedScope {
+					return true
 				}
 			}
+		}
 
-			if !hasRequiredRole {
-				return false
+		return false
+	})
+}
+
+// RequireRole returns a middleware handler function for protecting end-points
+// needing user authentication. The authenticated user needs to have any role
+// from the given set of roles in order to pass.
+func (auth *AuthMiddleware) RequireRole(requiredRoles ...string) echo.MiddlewareFunc {
+	return auth.Require(func(c *context) bool {
+		glg.Debugf("Checking for any role of: %s", strings.Join(requiredRoles, ", "))
+
+		for _, requiredRole := range requiredRoles {
+			for _, claimedRole := range c.Roles {
+				if requiredRole == claimedRole {
+					return true
+				}
 			}
 		}
 
-		return true
+		return false
 	})
 }
 
 // RequireAdminRole returns a middleware handler function for protecting
 // end-points needing user authentication.
-// Only users having with 'ADMIN' role are allowed to access the end-point.
+//
+// Only users having with 'admin' role are allowed to access the end-point.
 func (auth *AuthMiddleware) RequireAdminRole() echo.MiddlewareFunc {
-	return auth.RequireRoles(string(domain.RoleAdmin))
+	return auth.RequireRole(application.RoleAdmin)
 }
 
-func unwrapClaims(rawClaims []interface{}) []string {
-	if rawClaims == nil {
-		return nil
+/* Helper Methods */
+
+func (auth *AuthMiddleware) extractClaims(c *context, token *jwt.Token) {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims == nil {
+		return
 	}
 
-	claims := make([]string, len(rawClaims))
-	for i, claim := range rawClaims {
-		var ok bool
-		claims[i], ok = claim.(string)
-
-		if !ok {
-			return nil
-		}
-	}
-
-	return claims
+	c.Scopes = auth.authService.ExtractScopes(claims)
+	c.UserID = auth.authService.ExtractUserID(claims)
+	c.Username = auth.authService.ExtractUsername(claims)
+	c.Roles = auth.authService.ExtractRoles(claims)
 }
 
-func clearAuthContext(c *context) {
+func (auth *AuthMiddleware) clearAuthContext(c *context) {
+	c.Scopes = nil
 	c.UserID = nil
 	c.Username = nil
 	c.Roles = nil
 }
 
-func setAuthContext(c *context, userID uint, username string, roles []string) {
-	c.UserID = &userID
-	c.Username = &username
-	c.Roles = roles
-}
-
 /* Common Errors */
 
-func errorInvalidToken() error {
+func (auth *AuthMiddleware) errorInvalidToken() error {
 	return application.UnauthorizedError.New("Invalid token")
 }
 
-func errorUnauthorized() error {
+func (auth *AuthMiddleware) errorUnauthorized() error {
 	return application.UnauthorizedError.New("Unauthorized")
 }
 
-func errorInsufficientPermission() error {
-	return application.ForbiddenError.New("Insufficient permissions")
+func (auth *AuthMiddleware) errorForbidden() error {
+	return application.ForbiddenError.New("Forbidden")
 }

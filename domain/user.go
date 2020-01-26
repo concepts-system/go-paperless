@@ -1,8 +1,5 @@
 package domain
 
-// RoleAdmin defines the constant name of the admin role.
-const RoleAdmin = Role("ADMIN")
-
 // Name represents the type for common names.
 //
 // @ValueObject
@@ -12,11 +9,6 @@ type Name string
 //
 // @ValueObject
 type Password string
-
-// Role represents a role a user might have.
-//
-// @ValueObject
-type Role string
 
 // User represents a user within the system.
 //
@@ -40,15 +32,4 @@ func NewUser(user User) *User {
 		IsAdmin:  user.IsAdmin,
 		IsActive: user.IsActive,
 	}
-}
-
-// Roles returns the roles for the given user.
-func (u *User) Roles() []Role {
-	roles := make([]Role, 0)
-
-	if u.IsAdmin {
-		roles = append(roles, RoleAdmin)
-	}
-
-	return roles
 }

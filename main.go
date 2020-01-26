@@ -111,7 +111,7 @@ func setupDependencies(bs *bootstrapper) {
 }
 
 func initializeServer(bs *bootstrapper) {
-	bs.server = web.NewServer(bs.config)
+	bs.server = web.NewServer(bs.config, bs.authService)
 	registerRouters(bs)
 }
 

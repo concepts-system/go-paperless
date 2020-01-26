@@ -21,13 +21,19 @@ type Server struct {
 
 // NewServer constructs a new server instance considering the given
 // configuration.
-func NewServer(config *config.Configuration) *Server {
+func NewServer(
+	config *config.Configuration,
+	authService application.AuthService,
+) *Server {
 	glg.Info("Initializing server...")
 
 	server := Server{
-		echo:           echo.New(),
-		config:         config,
-		authMiddleware: NewAuthMiddleware(application.ConfigTokenKeyResolver(config)),
+		echo:   echo.New(),
+		config: config,
+		authMiddleware: NewAuthMiddleware(
+			authService,
+			application.ConfigTokenKeyResolver(config),
+		),
 	}
 
 	// Configure echo instance

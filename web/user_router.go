@@ -28,8 +28,8 @@ func NewUserRouter(userService application.UserService) Router {
 
 // DefineRoutes defines the routes for auth functionality.
 func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
-	apiGroup := group.Group("/api")
-	userGroup := apiGroup.Group("/user", auth.RequireAuthorization())
+	apiGroup := group.Group("/api", auth.RequireScope(application.TokenScopeAPI))
+	userGroup := apiGroup.Group("/user", auth.RequireAuthentication())
 	userGroup.GET("/me", r.getCurrentUser)
 	userGroup.PUT("/me", r.updateCurrentUser)
 	userGroup.PUT("/me/password", r.updateCurrentUsersPassword)

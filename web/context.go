@@ -31,6 +31,7 @@ type (
 		UserID   *uint
 		Username *string
 		Roles    []string
+		Scopes   []string
 	}
 
 	pageResponse struct {
