@@ -199,7 +199,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"currentPassword\": \"newPassword\",\n\t\"newPassword\": \"password\"\n}"
+							"raw": "{\n\t\"currentPassword\": \"password\",\n\t\"newPassword\": \"newPassword\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/user/me/password",
@@ -249,7 +249,7 @@
 					"response": []
 				},
 				{
-					"name": "Get User by ID",
+					"name": "Get User by Username",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -258,14 +258,14 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users/1",
+							"raw": "{{baseUrl}}/api/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
 								"users",
-								"1"
+								"user"
 							]
 						}
 					},
@@ -314,17 +314,17 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"forename\": \"Updated\",\n\t\"surname\": \"Name\",\n}"
+							"raw": "{\n\t\"forename\": \"Updated\",\n\t\"surname\": \"Name\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users/2",
+							"raw": "{{baseUrl}}/api/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
 								"users",
-								"2"
+								"user"
 							]
 						}
 					},
@@ -340,14 +340,14 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users/2",
+							"raw": "{{baseUrl}}/api/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
 								"users",
-								"2"
+								"user"
 							]
 						}
 					},
