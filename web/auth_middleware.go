@@ -118,7 +118,7 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 // RequireAuthentication returns a middleware handler function for protecting
 // end-points needing user authentication.
 //
-// Any valid user ID claim will pass the middleware.
+// Any valid subject claim will pass the middleware.
 func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
 	return auth.Require(func(c *context) bool {
 		glg.Debugf("Checking for user authentication")
@@ -181,14 +181,12 @@ func (auth *AuthMiddleware) extractClaims(c *context, token *jwt.Token) {
 	}
 
 	c.Scopes = auth.authService.ExtractScopes(claims)
-	c.UserID = auth.authService.ExtractUserID(claims)
 	c.Username = auth.authService.ExtractUsername(claims)
 	c.Roles = auth.authService.ExtractRoles(claims)
 }
 
 func (auth *AuthMiddleware) clearAuthContext(c *context) {
 	c.Scopes = nil
-	c.UserID = nil
 	c.Username = nil
 	c.Roles = nil
 }

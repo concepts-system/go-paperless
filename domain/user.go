@@ -14,7 +14,6 @@ type Password string
 //
 // @DomainEntity
 type User struct {
-	ID       Identifier
 	Username Name
 	Password Password
 	Surname  Name

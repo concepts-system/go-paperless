@@ -2,9 +2,7 @@ package web
 
 import (
 	"net/http"
-	"strconv"
 
-	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
 
 	"github.com/labstack/echo/v4"
@@ -37,16 +35,16 @@ func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	usersGroup := apiGroup.Group("/users", auth.RequireAdminRole())
 	usersGroup.GET("", r.findUsers)
 	usersGroup.POST("", r.createUser)
-	usersGroup.GET("/:id", r.getUser)
-	usersGroup.PUT("/:id", r.updateUser)
-	usersGroup.DELETE("/:id", r.deleteUser)
+	usersGroup.GET("/:username", r.getUser)
+	usersGroup.PUT("/:username", r.updateUser)
+	usersGroup.DELETE("/:username", r.deleteUser)
 }
 
 /* Handlers */
 
 func (r *userRouter) getCurrentUser(ec echo.Context) error {
 	c, _ := ec.(*context)
-	user, err := r.userService.GetUserByID(*c.UserID)
+	user, err := r.userService.GetUserByUsername(*c.Username)
 
 	if err != nil {
 		return err
@@ -59,7 +57,7 @@ func (r *userRouter) getCurrentUser(ec echo.Context) error {
 func (r *userRouter) updateCurrentUser(ec echo.Context) error {
 	c, _ := ec.(*context)
 
-	user, err := r.userService.GetUserByID(*c.UserID)
+	user, err := r.userService.GetUserByUsername(*c.Username)
 	if err != nil {
 		return err
 	}
@@ -90,7 +88,7 @@ func (r *userRouter) updateCurrentUsersPassword(ec echo.Context) error {
 	}
 
 	err := r.userService.UpdateUserPassword(
-		*c.UserID,
+		*c.Username,
 		validator.CurrentPassword,
 		validator.NewPassword,
 	)
@@ -116,12 +114,7 @@ func (r *userRouter) findUsers(ec echo.Context) error {
 }
 
 func (r *userRouter) getUser(c echo.Context) error {
-	id, err := r.bindUserID(c)
-	if err != nil {
-		return err
-	}
-
-	user, err := r.userService.GetUserByID(uint(id))
+	user, err := r.userService.GetUserByUsername(r.bindUsername(c))
 	if err != nil {
 		return err
 	}
@@ -153,13 +146,8 @@ func (r *userRouter) createUser(ec echo.Context) error {
 
 func (r *userRouter) updateUser(ec echo.Context) error {
 	c, _ := ec.(*context)
-
-	id, err := r.bindUserID(c)
-	if err != nil {
-		return err
-	}
-
-	user, err := r.userService.GetUserByID(uint(id))
+	username := r.bindUsername(c)
+	user, err := r.userService.GetUserByUsername(username)
 	if err != nil {
 		return err
 	}
@@ -169,7 +157,7 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 		return err
 	}
 
-	if *c.UserID == uint(id) {
+	if username == *c.Username {
 		if user.IsActive != validator.user.IsActive {
 			err := application.BadRequestError.New("User may not alter his own active state")
 			return errors.AddContext(err, "isActive", "const")
@@ -192,16 +180,13 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 
 func (r *userRouter) deleteUser(ec echo.Context) error {
 	c, _ := ec.(*context)
-	id, err := r.bindUserID(c)
-	if err != nil {
-		return err
-	}
+	username := r.bindUsername(c)
 
-	if *c.UserID != uint(id) {
+	if username == *c.Username {
 		return application.BadRequestError.New("User may not delete himself")
 	}
 
-	if err = r.userService.DeleteUser(domain.Identifier(id)); err != nil {
+	if err := r.userService.DeleteUser(username); err != nil {
 		return err
 	}
 
@@ -210,12 +195,6 @@ func (r *userRouter) deleteUser(ec echo.Context) error {
 
 /* Helper Methods */
 
-func (r *userRouter) bindUserID(c echo.Context) (uint, error) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-
-	if err != nil || id <= 0 {
-		return 0, application.BadRequestError.New("User ID has to be a positive integer")
-	}
-
-	return uint(id), nil
+func (r *userRouter) bindUsername(c echo.Context) string {
+	return c.Param("username")
 }

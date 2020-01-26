@@ -28,7 +28,6 @@ const (
 type (
 	context struct {
 		echo.Context
-		UserID   *uint
 		Username *string
 		Roles    []string
 		Scopes   []string
@@ -45,7 +44,7 @@ type (
 // IsAuthenticated returns a boolean value indicating whether
 // the given context is authenticated.
 func (c *context) IsAuthenticated() bool {
-	return c.UserID != nil
+	return c.Username != nil
 }
 
 // HasRole returns a boolean value indicating whether the given context

@@ -9,9 +9,9 @@ import (
 //
 // @ApplicationService
 type UserService interface {
-	// GetUserByID returns the user with the given ID or an error in case
-	// no such user exists.
-	GetUserByID(userID uint) (*domain.User, error)
+	// GetUserByUsername returns the user with the given username or
+	// an error in case no such user exists.
+	GetUserByUsername(username string) (*domain.User, error)
 
 	// FindUsers finds and returns users with respect to the given page request.
 	FindUsers(pr domain.PageRequest) ([]domain.User, int64, error)
@@ -23,10 +23,10 @@ type UserService interface {
 	UpdateUser(user *domain.User, password *string) (*domain.User, error)
 
 	// DeleteUser deletes the user with the given ID.
-	DeleteUser(userID domain.Identifier) error
+	DeleteUser(username string) error
 
 	// UpdateUserPassword updates the password of the user with the given ID.
-	UpdateUserPassword(userID uint, currentPassword, newPassword string) error
+	UpdateUserPassword(username string, currentPassword, newPassword string) error
 }
 
 type userServiceImpl struct {
@@ -42,8 +42,8 @@ func NewUserService(users domain.Users) UserService {
 	}
 }
 
-func (s *userServiceImpl) GetUserByID(userID uint) (*domain.User, error) {
-	return s.expectUserWithIDExists(domain.Identifier(userID))
+func (s *userServiceImpl) GetUserByUsername(username string) (*domain.User, error) {
+	return s.expectUserWithUsernameExists(domain.Name(username))
 }
 
 func (s *userServiceImpl) FindUsers(pr domain.PageRequest) ([]domain.User, int64, error) {
@@ -80,7 +80,7 @@ func (s *userServiceImpl) UpdateUser(
 	user *domain.User,
 	password *string,
 ) (*domain.User, error) {
-	originalUser, err := s.expectUserWithIDExists(user.ID)
+	originalUser, err := s.expectUserWithUsernameExists(user.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *userServiceImpl) UpdateUser(
 		s.passwordHelper.setUserPassword(originalUser, *password)
 	}
 
-	user, err = s.users.Save(originalUser)
+	user, err = s.users.Update(originalUser)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to update user")
 	}
@@ -109,8 +109,10 @@ func (s *userServiceImpl) UpdateUser(
 	return user, nil
 }
 
-func (s *userServiceImpl) UpdateUserPassword(userID uint, currentPassword, newPassword string) error {
-	user, err := s.expectUserWithIDExists(domain.Identifier(userID))
+func (s *userServiceImpl) UpdateUserPassword(
+	username, currentPassword, newPassword string,
+) error {
+	user, err := s.expectUserWithUsernameExists(domain.Name(username))
 	if err != nil {
 		return err
 	}
@@ -121,15 +123,15 @@ func (s *userServiceImpl) UpdateUserPassword(userID uint, currentPassword, newPa
 	}
 
 	s.passwordHelper.setUserPassword(user, newPassword)
-	if _, err := s.users.Save(user); err != nil {
+	if _, err := s.users.Update(user); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *userServiceImpl) DeleteUser(userID domain.Identifier) error {
-	user, err := s.users.GetByID(userID)
+func (s *userServiceImpl) DeleteUser(username string) error {
+	user, err := s.users.GetByUsername(domain.Name(username))
 	if err != nil {
 		return errors.Wrap(err, "Failed to retrieve users")
 	}
@@ -142,19 +144,6 @@ func (s *userServiceImpl) DeleteUser(userID domain.Identifier) error {
 }
 
 /* Helper Methods */
-
-func (s *userServiceImpl) expectUserWithIDExists(userID domain.Identifier) (*domain.User, error) {
-	user, err := s.users.GetByID(userID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to retrieve user")
-	}
-
-	if user == nil {
-		return nil, NotFoundError.Newf("User with ID %d does not exist", userID)
-	}
-
-	return user, nil
-}
 
 func (s *userServiceImpl) expectUserWithUsernameExists(username domain.Name) (*domain.User, error) {
 	user, err := s.users.GetByUsername(username)

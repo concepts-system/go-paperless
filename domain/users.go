@@ -4,10 +4,6 @@ package domain
 //
 // @DomainRepository
 type Users interface {
-	// GetByID returns the user with the given user ID or nil in case no such
-	// user exists.
-	GetByID(id Identifier) (*User, error)
-
 	// GetByUsername returns the user with the given username or nil in case
 	// no such user exists.
 	GetByUsername(username Name) (*User, error)
@@ -19,8 +15,8 @@ type Users interface {
 	// Add adds a new user.
 	Add(user *User) (*User, error)
 
-	// Save saves the given user.
-	Save(user *User) (*User, error)
+	// Update updates the given user.
+	Update(user *User) (*User, error)
 
 	// Delete deletes the given user.
 	Delete(user *User) error

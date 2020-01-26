@@ -8,7 +8,6 @@ import (
 
 // userResponse defines the user model projection returned by API methods.
 type userResponse struct {
-	ID       uint   `json:"id,omitempty"`
 	Username string `json:"username"`
 	Surname  string `json:"surname"`
 	Forename string `json:"forename"`
@@ -33,7 +32,6 @@ type (
 // Response returns the API response for a given user model.
 func (s userSerializer) Response() userResponse {
 	return userResponse{
-		ID:       uint(s.ID),
 		Username: string(s.Username),
 		Surname:  string(s.Surname),
 		Forename: string(s.Forename),

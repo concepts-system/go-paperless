@@ -5,11 +5,6 @@ package domain
 // @ValueObject
 type Count int64
 
-// Identifier represents the type for a generic unique identifier.
-//
-// @ValueObject
-type Identifier uint
-
 // PageOffset represents the type for a page offset.
 //
 // @ValueType

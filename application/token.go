@@ -9,8 +9,6 @@ import (
 const (
 	// TokenClaimSubject defines the token claim holding the token's subject.
 	TokenClaimSubject = "sub"
-	// TokenClaimUserID defines the token claim holding the user's ID.
-	TokenClaimUserID = "user_id"
 	// TokenClaimRoles defines the token claim holding the user's roles.
 	TokenClaimRoles = "roles"
 	// TokenClaimScopes defines the token claim holding the token's scopes.
@@ -21,7 +19,6 @@ type (
 	// Token defines a struct for holding authorization information.
 	Token struct {
 		Username       string
-		UserID         uint
 		Roles          []string
 		Expires        time.Time
 		RefreshExpires time.Time
@@ -30,16 +27,14 @@ type (
 	// AccessTokenClaims defines all JWT (standard and custom) claims contained in an accesss tokens.
 	AccessTokenClaims struct {
 		jwt.StandardClaims
-		Scope  string   `json:"scope"`
-		UserID uint     `json:"user_id"`
-		Roles  []string `json:"roles"`
+		Scope string   `json:"scope"`
+		Roles []string `json:"roles"`
 	}
 
 	// RefreshTokenClaims defines all JWT claims contained in a refresh token.
 	RefreshTokenClaims struct {
 		jwt.StandardClaims
-		Scope  string `json:"scope"`
-		UserID uint   `json:"user_id"`
+		Scope string `json:"scope"`
 	}
 )
 
@@ -57,14 +52,13 @@ func (t *Token) GetAccessTokenClaims(issuer, audience, scope string) AccessToken
 			ExpiresAt: t.Expires.Unix(),
 		},
 
-		Scope:  scope,
-		UserID: t.UserID,
-		Roles:  t.Roles,
+		Scope: scope,
+		Roles: t.Roles,
 	}
 }
 
 // GetRefreshTokenClaims returns the JWT refresh token claims for the given Token instance.
-func (t *Token) GetRefreshTokenClaims(userID uint, issuer, audience, scope string) RefreshTokenClaims {
+func (t *Token) GetRefreshTokenClaims(issuer, audience, scope string) RefreshTokenClaims {
 	now := time.Now()
 
 	return RefreshTokenClaims{
@@ -77,8 +71,7 @@ func (t *Token) GetRefreshTokenClaims(userID uint, issuer, audience, scope strin
 			ExpiresAt: t.RefreshExpires.Unix(),
 		},
 
-		Scope:  scope,
-		UserID: userID,
+		Scope: scope,
 	}
 }
 

@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"time"
+
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/jinzhu/gorm"
 )
@@ -10,13 +12,16 @@ type usersGormImpl struct {
 }
 
 type userModel struct {
-	gorm.Model
-	Username string `gorm:"size:32;not_null;unique;unique_index"`
-	Password string `gorm:"size:60;not_null"`
-	Surname  string `gorm:"size:32;not_null;index"`
-	Forename string `gorm:"size:32;not_null;index"`
-	IsAdmin  bool   `gorm:"not_null"`
-	IsActive bool   `gorm:"not_null"`
+	ID        uint `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `gorm:"index:username"`
+	Username  string     `gorm:"size:32;not_null;index:username"`
+	Password  string     `gorm:"size:60;not_null"`
+	Surname   string     `gorm:"size:32;not_null"`
+	Forename  string     `gorm:"size:32;not_null"`
+	IsAdmin   bool       `gorm:"not_null"`
+	IsActive  bool       `gorm:"not_null"`
 }
 
 func (userModel) TableName() string {
@@ -30,27 +35,8 @@ func NewUsers(db *Database) domain.Users {
 	}
 }
 
-func (u usersGormImpl) GetByID(id domain.Identifier) (*domain.User, error) {
-	var user userModel
-	err := u.db.Where("id = ?", uint(id)).First(&user).Error
-
-	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return u.mapUserModelToDomainEntity(&user), nil
-}
-
 func (u usersGormImpl) GetByUsername(username domain.Name) (*domain.User, error) {
-	var user userModel
-	err := u.db.
-		Where("username = ?", string(username)).
-		First(&user).
-		Error
+	user, err := u.getUserModelByUsername(string(username))
 
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
@@ -60,7 +46,7 @@ func (u usersGormImpl) GetByUsername(username domain.Name) (*domain.User, error)
 		return nil, err
 	}
 
-	return u.mapUserModelToDomainEntity(&user), nil
+	return u.mapUserModelToDomainEntity(user), nil
 }
 
 func (u usersGormImpl) Find(page domain.PageRequest) ([]domain.User, domain.Count, error) {
@@ -92,27 +78,50 @@ func (u usersGormImpl) Add(user *domain.User) (*domain.User, error) {
 		return nil, err
 	}
 
-	return u.GetByID(domain.Identifier(userModel.ID))
+	return u.GetByUsername(user.Username)
 }
 
-func (u usersGormImpl) Save(user *domain.User) (*domain.User, error) {
-	userModel := u.mapDomainEntityToUserModel(user)
-	err := u.db.Save(userModel).Error
+func (u usersGormImpl) Update(user *domain.User) (*domain.User, error) {
+	model, err := u.getUserModelByUsername(string(user.Username))
+	if err != nil {
+		return nil, err
+	}
+
+	updatedModel := u.mapDomainEntityToUserModel(user)
+	updatedModel.ID = model.ID
+
+	if err := u.db.Save(updatedModel).Error; err != nil {
+		return nil, err
+	}
+
+	return u.GetByUsername(user.Username)
+}
+
+func (u usersGormImpl) Delete(user *domain.User) error {
+	model, err := u.getUserModelByUsername(string(user.Username))
+	if user == nil {
+		return err
+	}
+
+	return u.db.Delete(model).Error
+}
+
+func (u *usersGormImpl) getUserModelByUsername(username string) (*userModel, error) {
+	var user userModel
+	err := u.db.
+		Where("username = ?", string(username)).
+		First(&user).
+		Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return u.GetByID(domain.Identifier(userModel.ID))
-}
-
-func (u usersGormImpl) Delete(user *domain.User) error {
-	return u.db.Delete(user).Error
+	return &user, nil
 }
 
 func (u *usersGormImpl) mapUserModelToDomainEntity(user *userModel) *domain.User {
 	return &domain.User{
-		ID:       domain.Identifier(user.ID),
 		Username: domain.Name(user.Username),
 		Surname:  domain.Name(user.Surname),
 		Forename: domain.Name(user.Forename),
@@ -142,6 +151,5 @@ func (u *usersGormImpl) mapDomainEntityToUserModel(user *domain.User) *userModel
 		IsActive: user.IsActive,
 	}
 
-	model.ID = uint(user.ID)
 	return model
 }

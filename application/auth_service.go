@@ -50,9 +50,6 @@ type AuthService interface {
 	// ExtractScopes extracts the token scopes from the given set of claims.
 	ExtractScopes(claims jwt.MapClaims) []string
 
-	// ExtractUserID extracts the user ID from the given set of claims.
-	ExtractUserID(claims jwt.MapClaims) *uint
-
 	// ExtractUsername extracts the username from the given set of claims.
 	ExtractUsername(claims jwt.MapClaims) *string
 
@@ -110,13 +107,12 @@ func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, e
 			return nil, UnauthorizedError.Newf("Invalid token: Missing scope '%s'", TokenScopeAuthRefresh)
 		}
 
-		userID, ok := claims[TokenClaimUserID].(float64)
-
-		if !ok || userID < 0 {
-			return nil, UnauthorizedError.New("Invalid token: Invalid user ID claim")
+		username, ok := claims[TokenClaimSubject].(string)
+		if !ok {
+			return nil, UnauthorizedError.New("Invalid token: Invalid subject claim")
 		}
 
-		user, err := s.users.GetByID(domain.Identifier(uint(userID)))
+		user, err := s.users.GetByUsername(domain.Name(username))
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to read users")
 		}
@@ -125,7 +121,7 @@ func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, e
 			return nil, s.badCredentialsError()
 		}
 
-		token, err := s.issueTokenForUser(uint(userID))
+		token, err := s.issueTokenForUser(domain.Name(username))
 		if err != nil {
 			return nil, err
 		}
@@ -160,7 +156,6 @@ func (s *authServiceImpl) SignRefreshToken(token *Token) (string, error) {
 	jwtToken := jwt.NewWithClaims(
 		s.getSigningMethodHMAC(),
 		token.GetRefreshTokenClaims(
-			token.UserID,
 			host,
 			host,
 			TokenScopeAuthRefresh,
@@ -188,15 +183,6 @@ func (s *authServiceImpl) ExtractScopes(claims jwt.MapClaims) []string {
 	}
 
 	return scopes
-}
-
-func (s *authServiceImpl) ExtractUserID(claims jwt.MapClaims) *uint {
-	if id, ok := claims[TokenClaimUserID].(float64); ok {
-		userID := uint(id)
-		return &userID
-	}
-
-	return nil
 }
 
 func (s *authServiceImpl) ExtractUsername(claims jwt.MapClaims) *string {
@@ -238,14 +224,14 @@ func (s *authServiceImpl) claimsScope(claims jwt.MapClaims, scope string) bool {
 	return false
 }
 
-func (s *authServiceImpl) issueTokenForUser(userID uint) (*Token, error) {
-	user, err := s.users.GetByID(domain.Identifier(userID))
+func (s *authServiceImpl) issueTokenForUser(username domain.Name) (*Token, error) {
+	user, err := s.users.GetByUsername(username)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to retrieve user")
 	}
 
 	if user == nil {
-		return nil, NotFoundError.Newf("No user with ID %d found", userID)
+		return nil, NotFoundError.Newf("No user with username %s found", username)
 	}
 
 	return s.userToken(user), nil
@@ -253,7 +239,6 @@ func (s *authServiceImpl) issueTokenForUser(userID uint) (*Token, error) {
 
 func (s *authServiceImpl) userToken(user *domain.User) *Token {
 	return &Token{
-		UserID:         uint(user.ID),
 		Username:       string(user.Username),
 		Roles:          s.unwrapRoles(user),
 		Expires:        time.Now().Add(s.config.GetJWTExpirationTime()),
