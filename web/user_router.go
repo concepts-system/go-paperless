@@ -169,9 +169,9 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 		return err
 	}
 
-	if r.isCurrentUserID(c, validator.user.ID) {
+	if *c.UserID == uint(id) {
 		if user.IsActive != validator.user.IsActive {
-			err := application.BadRequestError.New("User may not alter his active state")
+			err := application.BadRequestError.New("User may not alter his own active state")
 			return errors.AddContext(err, "isActive", "const")
 		}
 
@@ -197,7 +197,7 @@ func (r *userRouter) deleteUser(ec echo.Context) error {
 		return err
 	}
 
-	if r.isCurrentUserID(c, domain.Identifier(id)) {
+	if *c.UserID != uint(id) {
 		return application.BadRequestError.New("User may not delete himself")
 	}
 
@@ -218,12 +218,4 @@ func (r *userRouter) bindUserID(c echo.Context) (uint, error) {
 	}
 
 	return uint(id), nil
-}
-
-func (r *userRouter) isCurrentUserID(c *context, id domain.Identifier) bool {
-	if *c.UserID == uint(id) {
-		return true
-	}
-
-	return false
 }
