@@ -38,8 +38,8 @@ func (o OcrEngine) GenerateDocument(document *DocumentModel) (string, string, er
 	}
 
 	pagePaths := make([]string, len(pages))
-	for idx, page := range pages {
-		pagePaths[idx] = GetContentPath(page.DocumentID, page.FileName())
+	for i, page := range pages {
+		pagePaths[i] = GetContentPath(page.DocumentID, page.FileName())
 	}
 
 	newContentID := uuid.New().String()

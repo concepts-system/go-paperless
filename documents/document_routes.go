@@ -246,10 +246,10 @@ func addPagesToDocument(ec echo.Context) error {
 	pages := make([]PageModel, len(files))
 	glg.Infof("Appending pages to document %d...", document.ID)
 
-	for idx, page := range files {
+	for i, page := range files {
 		stream, err := page.Open()
 		if err != nil {
-			return errors.BadRequest.Newf("Failed to read page %d during upload: %s", idx, err.Error())
+			return errors.BadRequest.Newf("Failed to read page %d during upload: %s", i, err.Error())
 		}
 
 		contentType := page.Header.Get(mimeHeaderKeyContentType)
@@ -257,18 +257,18 @@ func addPagesToDocument(ec echo.Context) error {
 			return errors.BadRequest.Newf(
 				"The content type '%s' for page %d is not supported; please supply a valid image content type",
 				contentType,
-				idx,
+				i,
 			)
 		}
 
-		glg.Debugf("Appending page %d with type '%s'", idx, contentType)
+		glg.Debugf("Appending page %d with type '%s'", i, contentType)
 		page, err := AppendPageToDocument(document, contentType, stream)
 
 		if err != nil {
-			return errors.Wrapf(err, "Failed to index page %d", idx)
+			return errors.Wrapf(err, "Failed to index page %d", i)
 		}
 
-		pages[idx] = *page
+		pages[i] = *page
 	}
 
 	serializer := PageListSerializer{c, pages}

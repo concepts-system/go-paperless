@@ -1,23 +1,22 @@
 package domain
 
-// Count represents a generic count of objects.
-//
-// @ValueObject
-type Count int64
+type (
+	// Text represents the type of abstract text.
+	Text string
+	// Count represents a generic count of objects.
+	Count int64
 
-// PageOffset represents the type for a page offset.
-//
-// @ValueType
-type PageOffset uint
+	// Fingerprint represents the type of a document's or page's fingerprint.
+	Fingerprint string
 
-// PageSize represents the type for a page size.
-//
-// @ValueType
-type PageSize uint
+	// PageOffset represents the type for a page offset.
+	PageOffset uint
+
+	// PageSize represents the type for a page size.
+	PageSize uint
+)
 
 // PageRequest defines a struct for declaring pagin information for requests.
-//
-// @ValueObject
 type PageRequest struct {
 	Offset PageOffset
 	Size   PageSize

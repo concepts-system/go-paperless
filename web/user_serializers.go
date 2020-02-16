@@ -6,7 +6,6 @@ import (
 	"github.com/concepts-system/go-paperless/domain"
 )
 
-// userResponse defines the user model projection returned by API methods.
 type userResponse struct {
 	Username string `json:"username"`
 	Surname  string `json:"surname"`
@@ -15,21 +14,19 @@ type userResponse struct {
 	IsActive bool   `json:"isActive"`
 }
 
-// userSerializer defines functionality for serializing user models into user responses.
 type (
 	userSerializer struct {
 		C echo.Context
 		*domain.User
 	}
 
-	// userListSerializer defines functionality for serializing users models into users responses.
 	userListSerializer struct {
 		C     echo.Context
 		Users []domain.User
 	}
 )
 
-// Response returns the API response for a given user model.
+// Response returns the API response for a given user.
 func (s userSerializer) Response() userResponse {
 	return userResponse{
 		Username: string(s.Username),
@@ -40,13 +37,13 @@ func (s userSerializer) Response() userResponse {
 	}
 }
 
-// Response returns the API response for a given users model.
+// Response returns the API response for a list of users.
 func (s userListSerializer) Response() []userResponse {
 	response := make([]userResponse, len(s.Users))
 
-	for idx, user := range s.Users {
+	for i, user := range s.Users {
 		serializer := userSerializer{s.C, &user}
-		response[idx] = serializer.Response()
+		response[i] = serializer.Response()
 	}
 
 	return response

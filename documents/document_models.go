@@ -83,8 +83,8 @@ func GetAllDocumentIDs() ([]uint, error) {
 	}
 
 	ids = make([]uint, len(documents))
-	for idx, document := range documents {
-		ids[idx] = document.ID
+	for i, document := range documents {
+		ids[i] = document.ID
 	}
 
 	return ids, nil

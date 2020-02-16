@@ -31,10 +31,12 @@ type bootstrapper struct {
 	database *infrastructure.Database
 	server   *web.Server
 
-	users domain.Users
+	users     domain.Users
+	documents domain.Documents
 
-	authService application.AuthService
-	userService application.UserService
+	authService     application.AuthService
+	userService     application.UserService
+	documentService application.DocumentService
 
 	tokenKeyResolver application.TokenKeyResolver
 }
@@ -101,6 +103,7 @@ func createDirectories(bs *bootstrapper) {
 func setupDependencies(bs *bootstrapper) {
 	bs.tokenKeyResolver = application.ConfigTokenKeyResolver(bs.config)
 	bs.users = infrastructure.NewUsers(bs.database)
+	bs.documents = infrastructure.NewDocuments(bs.database)
 
 	bs.userService = application.NewUserService(bs.users)
 	bs.authService = application.NewAuthService(
@@ -108,6 +111,7 @@ func setupDependencies(bs *bootstrapper) {
 		bs.users,
 		bs.tokenKeyResolver,
 	)
+	bs.documentService = application.NewDocumentService(bs.users, bs.documents)
 }
 
 func initializeServer(bs *bootstrapper) {
@@ -116,7 +120,6 @@ func initializeServer(bs *bootstrapper) {
 }
 
 func registerRouters(bs *bootstrapper) {
-	// TODO: Register auth, user and document routes here
 	bs.server.Register(
 		// Auth routes
 		web.NewAuthRouter(
@@ -126,6 +129,9 @@ func registerRouters(bs *bootstrapper) {
 
 		// User routes
 		web.NewUserRouter(bs.userService),
+
+		// Document routes
+		web.NewDocumentRouter(bs.documentService),
 	)
 }
 
@@ -139,7 +145,7 @@ func registerRouters(bs *bootstrapper) {
 // }
 
 func ensureUserExists(bs *bootstrapper) {
-	_, count, err := bs.userService.FindUsers(domain.PageRequest{Offset: 0, Size: 1})
+	_, count, err := bs.userService.GetUsers(domain.PageRequest{Offset: 0, Size: 1})
 
 	if err != nil {
 		glg.Fatalf("Error while checking for default user: %v", err)

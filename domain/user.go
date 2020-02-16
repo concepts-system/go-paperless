@@ -1,18 +1,14 @@
 package domain
 
-// Name represents the type for common names.
-//
-// @ValueObject
-type Name string
+type (
+	// Name represents the type for common names.
+	Name string
 
-// Password represents the type for a password.
-//
-// @ValueObject
-type Password string
+	// Password represents the type for a password.
+	Password string
+)
 
 // User represents a user within the system.
-//
-// @DomainEntity
 type User struct {
 	Username Name
 	Password Password

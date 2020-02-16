@@ -6,15 +6,13 @@ import (
 )
 
 // UserService defines an application service for managing users use-cases.
-//
-// @ApplicationService
 type UserService interface {
 	// GetUserByUsername returns the user with the given username or
 	// an error in case no such user exists.
 	GetUserByUsername(username string) (*domain.User, error)
 
-	// FindUsers finds and returns users with respect to the given page request.
-	FindUsers(pr domain.PageRequest) ([]domain.User, int64, error)
+	// GetUsers finds and returns users with respect to the given page request.
+	GetUsers(pr domain.PageRequest) ([]domain.User, int64, error)
 
 	// Creates the given new user with the desired password as clear-text.
 	CreateNewUser(user *domain.User, password string) (*domain.User, error)
@@ -46,7 +44,7 @@ func (s *userServiceImpl) GetUserByUsername(username string) (*domain.User, erro
 	return s.expectUserWithUsernameExists(domain.Name(username))
 }
 
-func (s *userServiceImpl) FindUsers(pr domain.PageRequest) ([]domain.User, int64, error) {
+func (s *userServiceImpl) GetUsers(pr domain.PageRequest) ([]domain.User, int64, error) {
 	users, count, err := s.users.Find(pr)
 
 	if err != nil {
@@ -152,7 +150,7 @@ func (s *userServiceImpl) expectUserWithUsernameExists(username domain.Name) (*d
 	}
 
 	if user == nil {
-		return nil, NotFoundError.Newf("User with username '%s' does not exist", username)
+		return nil, NotFoundError.Newf("User '%s' does not exist", username)
 	}
 
 	return user, nil

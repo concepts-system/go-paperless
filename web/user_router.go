@@ -3,11 +3,10 @@ package web
 import (
 	"net/http"
 
-	"github.com/concepts-system/go-paperless/errors"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/application"
+	"github.com/concepts-system/go-paperless/errors"
 )
 
 var errorUsernameAlreadyExists = application.ConflictError.Newf("A user with the given username does already exist")
@@ -33,7 +32,7 @@ func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	userGroup.PUT("/me/password", r.updateCurrentUsersPassword)
 
 	usersGroup := apiGroup.Group("/users", auth.RequireAdminRole())
-	usersGroup.GET("", r.findUsers)
+	usersGroup.GET("", r.getUsers)
 	usersGroup.POST("", r.createUser)
 	usersGroup.GET("/:username", r.getUser)
 	usersGroup.PUT("/:username", r.updateUser)
@@ -100,10 +99,10 @@ func (r *userRouter) updateCurrentUsersPassword(ec echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (r *userRouter) findUsers(ec echo.Context) error {
+func (r *userRouter) getUsers(ec echo.Context) error {
 	c, _ := ec.(*context)
 	pr := c.BindPaging()
-	users, totalCount, err := r.userService.FindUsers(pr.ToDomainPageRequest())
+	users, totalCount, err := r.userService.GetUsers(pr.ToDomainPageRequest())
 
 	if err != nil {
 		return err

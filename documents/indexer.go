@@ -58,23 +58,23 @@ func PrepareIndex() error {
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
 		glg.Warnf("Index at '%s' not found, recreating...", indexPath)
 
-		idx, err := bleve.New(indexPath, createIndexMapping())
+		i, err := bleve.New(indexPath, createIndexMapping())
 		if err != nil {
 			return err
 		}
 
-		index = idx
+		index = i
 		glg.Info("Reindexing all documents in background...")
 		go indexAllDocuments()
 		return nil
 	}
 
-	idx, err := bleve.Open(indexPath)
+	i, err := bleve.Open(indexPath)
 	if err != nil {
 		return err
 	}
 
-	index = idx
+	index = i
 	return nil
 }
 
@@ -162,8 +162,8 @@ func indexAllDocuments() {
 
 func indexForDocumentModel(document *DocumentModel, pages []PageModel) DocumentIndex {
 	pageIndexes := make([]PageIndex, len(pages))
-	for idx, page := range pages {
-		pageIndexes[idx] = indexForPageModel(page)
+	for i, page := range pages {
+		pageIndexes[i] = indexForPageModel(page)
 	}
 
 	return DocumentIndex{

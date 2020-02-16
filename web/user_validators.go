@@ -6,7 +6,6 @@ import (
 	"github.com/concepts-system/go-paperless/errors"
 )
 
-// userPasswordUpdateValidator defines the validation rules for update password requests.
 type userPasswordUpdateValidator struct {
 	CurrentPassword string `json:"currentPassword" validate:"required"`
 	NewPassword     string `json:"newPassword" validate:"required,min=8,max=255"`
@@ -21,12 +20,10 @@ func (v *userPasswordUpdateValidator) Bind(c *context) error {
 	return nil
 }
 
-// newPasswordUpdateValidator constructs a validator with default values.
 func newPasswordUpdateValidator() *userPasswordUpdateValidator {
 	return &userPasswordUpdateValidator{}
 }
 
-// userValidator defines the validation rules for user models.
 type userValidator struct {
 	passwordRequired bool
 
@@ -68,7 +65,6 @@ func (v *userValidator) Bind(c *context) error {
 	return nil
 }
 
-// newUserValidator constructs a validator with default values.
 func newUserValidator(passwordRequired bool) *userValidator {
 	return &userValidator{
 		passwordRequired: passwordRequired,
@@ -77,7 +73,6 @@ func newUserValidator(passwordRequired bool) *userValidator {
 	}
 }
 
-// newUserValidatorOf constructs a validator with the values from the given user model.
 func newUserValidatorOf(user *domain.User, passwordRequired bool) *userValidator {
 	password := ""
 	validator := newUserValidator(passwordRequired)

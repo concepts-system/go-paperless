@@ -63,9 +63,9 @@ func (s *DocumentSerializer) Response() DocumentResponse {
 func (s *DocumentListSerializer) Response() []DocumentResponse {
 	response := make([]DocumentResponse, len(s.Documents))
 
-	for idx, document := range s.Documents {
+	for i, document := range s.Documents {
 		serializer := DocumentSerializer{s.C, &document}
-		response[idx] = serializer.Response()
+		response[i] = serializer.Response()
 	}
 
 	return response
@@ -84,9 +84,9 @@ func (s *PageSerializer) Response() PageResponse {
 func (s *PageListSerializer) Response() []PageResponse {
 	response := make([]PageResponse, len(s.Pages))
 
-	for idx, page := range s.Pages {
+	for i, page := range s.Pages {
 		serializer := PageSerializer{s.C, &page}
-		response[idx] = serializer.Response()
+		response[i] = serializer.Response()
 	}
 
 	return response

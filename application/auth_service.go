@@ -26,8 +26,6 @@ const (
 
 // AuthService defines an application service for authentication and
 // authorization use-cases.
-//
-// @ApplicationService
 type AuthService interface {
 	// AuthenticateUserByCredentials tries to authenticate the user using the
 	// given username and password and returns a new access token in case the
@@ -231,7 +229,7 @@ func (s *authServiceImpl) issueTokenForUser(username domain.Name) (*Token, error
 	}
 
 	if user == nil {
-		return nil, NotFoundError.Newf("No user with username %s found", username)
+		return nil, NotFoundError.Newf("User %s does not exist", username)
 	}
 
 	return s.userToken(user), nil
