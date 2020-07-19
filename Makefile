@@ -3,6 +3,13 @@ BUILD_DATE	:=	$(shell date +%Y-%m-%d\ %H:%M)
 GIT_REF		:=	$(shell git rev-parse --abbrev-ref HEAD)
 BINARY_NAME	:=	go-paperless
 
+HAS_RICHGO := $(shell which richgo)
+ifdef HAS_RICHGO
+    GOTEST=richgo test
+else
+    GOTEST=go test
+endif
+
 all: install
 
 clean:

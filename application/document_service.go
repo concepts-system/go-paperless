@@ -84,7 +84,10 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 
 /* Helper Methods */
 
-func (s *documentServiceImpl) userMayAccessDocument(username string, document *domain.Document) (bool, error) {
+func (s *documentServiceImpl) userMayAccessDocument(
+	username string,
+	document *domain.Document,
+) (bool, error) {
 	return document.Owner.Username == domain.Name(username), nil
 }
 

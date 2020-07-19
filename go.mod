@@ -3,6 +3,7 @@ module github.com/concepts-system/go-paperless
 go 1.12
 
 require (
+	cloud.google.com/go v0.37.4
 	github.com/RoaringBitmap/roaring v0.4.17 // indirect
 	github.com/Smerity/govarint v0.0.0-20150407073650-7265e41f48f1 // indirect
 	github.com/blevesearch/bleve v0.7.0
@@ -26,6 +27,8 @@ require (
 	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 // indirect
+	github.com/stretchr/testify v1.4.0
+	github.com/vektra/mockery v1.1.2 // indirect
 	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/gormigrate.v1 v1.5.0
