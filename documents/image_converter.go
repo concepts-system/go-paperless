@@ -8,7 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/google/uuid"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 
 	"github.com/concepts-system/go-paperless/errors"
 )
@@ -36,7 +36,7 @@ func (i ImageConverter) ConvertPage(pageID uint) error {
 	}
 
 	if !i.needsConversion(page.ContentType) {
-		glg.Infof("Skipping conversion for page %d as content type %s does not require conversion", pageID, page.ContentType)
+		log.Infof("Skipping conversion for page %d as content type %s does not require conversion", pageID, page.ContentType)
 		return updatePageAfterConversion(page, page.Checksum)
 	}
 
@@ -74,7 +74,7 @@ func (i ImageConverter) ConvertPage(pageID uint) error {
 	}
 
 	if err = os.Remove(fromFile); err != nil {
-		glg.Warnf("Error during page conversion: Could not remove old page content at '%s'", fromFile)
+		log.Warnf("Error during page conversion: Could not remove old page content at '%s'", fromFile)
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func (i ImageConverter) needsConversion(contentType string) bool {
 
 func (i ImageConverter) convert(from, to string) error {
 	// TODO Make conversion command configurable
-	glg.Debugf("Converting %s to %s...", from, to)
+	log.Debugf("Converting %s to %s...", from, to)
 	cmd := exec.Command("convert", from, to)
 	return cmd.Run()
 }

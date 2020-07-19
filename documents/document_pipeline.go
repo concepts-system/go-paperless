@@ -6,7 +6,7 @@ import (
 
 	faktory "github.com/contribsys/faktory/client"
 	worker "github.com/contribsys/faktory_worker_go"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 )
 
 const (
@@ -60,7 +60,7 @@ func convertPage(ctx worker.Context, args ...interface{}) error {
 		return err
 	}
 
-	glg.Infof("Converting page %d", pageID)
+	log.Infof("Converting page %d", pageID)
 
 	if err := imageConverter.ConvertPage(pageID); err != nil {
 		return errors.Wrapf(err, "Conversion of page %d failed", pageID)
@@ -70,8 +70,8 @@ func convertPage(ctx worker.Context, args ...interface{}) error {
 		return errors.Wrapf(err, "Submission of page recognition job for page %d failed", pageID)
 	}
 
-	glg.Infof("Sent recognition job for page %d", pageID)
-	glg.Successf("Conversion for page %d complete", pageID)
+	log.Infof("Sent recognition job for page %d", pageID)
+	log.Successf("Conversion for page %d complete", pageID)
 	return nil
 }
 
@@ -86,7 +86,7 @@ func recognizePage(ctx worker.Context, args ...interface{}) error {
 		return err
 	}
 
-	glg.Infof("Running recognition for page %d", pageID)
+	log.Infof("Running recognition for page %d", pageID)
 
 	text, err := ocrEngine.RecognizePage(page)
 	if err != nil {
@@ -106,7 +106,7 @@ func recognizePage(ctx worker.Context, args ...interface{}) error {
 	}
 
 	if allPagesClean(pages) {
-		glg.Infof("All pages for document %d clean; sending indexing job...", page.DocumentID)
+		log.Infof("All pages for document %d clean; sending indexing job...", page.DocumentID)
 
 		document, err := GetDocumentByID(page.DocumentID)
 		if err != nil {
@@ -126,10 +126,10 @@ func recognizePage(ctx worker.Context, args ...interface{}) error {
 			)
 		}
 
-		glg.Infof("Submitted indexing job for document %d", page.DocumentID)
+		log.Infof("Submitted indexing job for document %d", page.DocumentID)
 	}
 
-	glg.Successf("Recognition for page %d complete", pageID)
+	log.Successf("Recognition for page %d complete", pageID)
 	return nil
 }
 
@@ -157,7 +157,7 @@ func indexDocument(ctx worker.Context, args ...interface{}) error {
 		return err
 	}
 
-	glg.Successf("Indexing for document %d complete", documentID)
+	log.Successf("Indexing for document %d complete", documentID)
 	return nil
 }
 
@@ -172,7 +172,7 @@ func generateDocument(ctx worker.Context, args ...interface{}) error {
 		return errors.Wrapf(err, "Failed to find document with ID %d", documentID)
 	}
 
-	glg.Infof("Generating searchable PDF for document %d", documentID)
+	log.Infof("Generating searchable PDF for document %d", documentID)
 	newContentID, fileExtension, err := ocrEngine.GenerateDocument(document)
 
 	if err != nil {
@@ -196,7 +196,7 @@ func generateDocument(ctx worker.Context, args ...interface{}) error {
 		return errors.Wrapf(err, "Failed to update document %d", documentID)
 	}
 
-	glg.Successf("Generation for document %d complete", documentID)
+	log.Successf("Generation for document %d complete", documentID)
 	return nil
 }
 
@@ -204,11 +204,11 @@ func generateDocument(ctx worker.Context, args ...interface{}) error {
 
 func jobHandler(handler worker.Perform) worker.Perform {
 	return func(ctx worker.Context, args ...interface{}) error {
-		glg.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
+		log.Infof("Received %s job with ID %s", ctx.JobType(), ctx.Jid())
 
 		err := handler(ctx, args...)
 		if err != nil {
-			glg.Error(err)
+			log.Error(err)
 		}
 
 		return err

@@ -9,7 +9,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/concepts-system/go-paperless/common"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 )
 
 // Indexer represents an interface for objects able to execute index operations.
@@ -56,7 +56,7 @@ func PrepareIndex() error {
 	indexPath := getIndexPath()
 
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
-		glg.Warnf("Index at '%s' not found, recreating...", indexPath)
+		log.Warnf("Index at '%s' not found, recreating...", indexPath)
 
 		i, err := bleve.New(indexPath, createIndexMapping())
 		if err != nil {
@@ -64,7 +64,7 @@ func PrepareIndex() error {
 		}
 
 		index = i
-		glg.Info("Reindexing all documents in background...")
+		log.Info("Reindexing all documents in background...")
 		go indexAllDocuments()
 		return nil
 	}
@@ -85,7 +85,7 @@ func GetIndex() bleve.Index {
 
 // IndexDocument indexes the document for the given document ID.
 func IndexDocument(documentID uint, indexer Indexer) error {
-	glg.Infof("Indexing document with ID %d", documentID)
+	log.Infof("Indexing document with ID %d", documentID)
 
 	document, err := GetDocumentByID(documentID)
 	if err != nil {
@@ -141,7 +141,7 @@ func getIndexPath() string {
 func indexAllDocuments() {
 	documentIDs, err := GetAllDocumentIDs()
 	if err != nil {
-		glg.Errorf("Failed to retrieve document IDs to index: %s", err)
+		log.Errorf("Failed to retrieve document IDs to index: %s", err)
 		return
 	}
 
@@ -150,12 +150,12 @@ func indexAllDocuments() {
 		err := IndexDocument(id, batch)
 
 		if err != nil {
-			glg.Warnf("Failed to index document with ID %d: %s", id, err)
+			log.Warnf("Failed to index document with ID %d: %s", id, err)
 		}
 	}
 
 	if err = GetIndex().Batch(batch); err != nil {
-		glg.Errorf("Failed to execute batch indexing: %s", err)
+		log.Errorf("Failed to execute batch indexing: %s", err)
 		return
 	}
 }

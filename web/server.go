@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -25,7 +25,7 @@ func NewServer(
 	config *config.Configuration,
 	authService application.AuthService,
 ) *Server {
-	glg.Info("Initializing server...")
+	log.Info("Initializing server...")
 
 	server := Server{
 		echo:   echo.New(),
@@ -68,6 +68,6 @@ func (server *Server) Register(routers ...Router) {
 // Start runs the server in a blocking way.
 func (server *Server) Start() error {
 	endpoint := fmt.Sprintf(":%d", server.config.GetPort())
-	glg.Successf("Accepting connection on %s", endpoint)
+	log.Successf("Accepting connection on %s", endpoint)
 	return server.echo.Start(endpoint)
 }

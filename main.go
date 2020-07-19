@@ -14,7 +14,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/web"
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano())
-	glg.Infof("Starting application %s (%s)", version, buildDate)
+	log.Infof("Starting application %s (%s)", version, buildDate)
 
 	loadConfiguration(bs)
 	prepareDatabase(bs)
@@ -64,12 +64,12 @@ func main() {
 	initializeServer(bs)
 	ensureUserExists(bs)
 
-	glg.Successf("Start-up completed in %v", time.Since(start))
+	log.Successf("Start-up completed in %v", time.Since(start))
 	bs.server.Start()
 }
 
 func loadConfiguration(bs *bootstrapper) {
-	glg.Info("Loading configuration...")
+	log.Info("Loading configuration...")
 	bs.config = config.LoadConfiguration(release == "true")
 	createDirectories(bs)
 }
@@ -79,19 +79,19 @@ func prepareDatabase(bs *bootstrapper) {
 	bs.database.Connect()
 
 	if bs.config.MigrateDatabase() {
-		glg.Info("Running migrations...")
+		log.Info("Running migrations...")
 
 		// Migrate to most recent version by default.
 		// Use 'bs.database.MigrateTo(version)' to migrate to a specific version.
 		if err := bs.database.Migrate(); err != nil {
-			glg.Fatalf("Error while migrating database: %v", err)
+			log.Fatalf("Error while migrating database: %v", err)
 		}
 
 	}
 }
 
 func createDirectories(bs *bootstrapper) {
-	glg.Info("Setting up directories...")
+	log.Info("Setting up directories...")
 	config := bs.config
 
 	// Create data directory
@@ -136,7 +136,7 @@ func registerRouters(bs *bootstrapper) {
 }
 
 // func initializeWorkers() {
-// 	glg.Info("Initializing workers...")
+// 	log.Info("Initializing workers...")
 
 // 	manager := worker.NewManager()
 // 	documents.RegisterWorkers(manager)
@@ -148,7 +148,7 @@ func ensureUserExists(bs *bootstrapper) {
 	_, count, err := bs.userService.GetUsers(domain.PageRequest{Offset: 0, Size: 1})
 
 	if err != nil {
-		glg.Fatalf("Error while checking for default user: %v", err)
+		log.Fatalf("Error while checking for default user: %v", err)
 		panic(err)
 	}
 
@@ -156,7 +156,7 @@ func ensureUserExists(bs *bootstrapper) {
 		return
 	}
 
-	glg.Info("No user present; creating default one...")
+	log.Info("No user present; creating default one...")
 	defaultUser := domain.NewUser(domain.User{
 		Username: "admin",
 		Forename: "Default",
@@ -168,6 +168,6 @@ func ensureUserExists(bs *bootstrapper) {
 	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
 
 	if err != nil {
-		glg.Fatalf("Error while creating default user: %v", err)
+		log.Fatalf("Error while creating default user: %v", err)
 	}
 }

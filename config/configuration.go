@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 )
 
 const (
@@ -171,7 +171,7 @@ func LoadConfiguration(release bool) *Configuration {
 	profiles := getProfiles()
 
 	for _, profile := range profiles {
-		glg.Infof("Loading configuration for profile '%s'...", profile)
+		log.Infof("Loading configuration for profile '%s'...", profile)
 		loadProfile(profile)
 	}
 
@@ -192,7 +192,7 @@ func LoadConfiguration(release bool) *Configuration {
 	config.jwtKey = getJWTKey(config)
 
 	if config.IsProduction() {
-		glg.Get().SetLevelMode(glg.DEBG, glg.NONE)
+		log.Get().SetLevelMode(log.DEBG, log.NONE)
 	}
 
 	return config
@@ -231,8 +231,8 @@ func getPublicURL() *url.URL {
 	url, err := url.Parse(publicURL)
 
 	if err != nil {
-		glg.Warnf("Invalid base URL given: '%s'!", publicURL)
-		glg.Warnf("Falling back to default '%s'.", defaultPublicURL)
+		log.Warnf("Invalid base URL given: '%s'!", publicURL)
+		log.Warnf("Falling back to default '%s'.", defaultPublicURL)
 		url, _ = url.Parse(defaultPublicURL)
 	}
 
@@ -249,8 +249,8 @@ func getPort() int {
 	port, err := strconv.Atoi(portString)
 
 	if err != nil {
-		glg.Warnf("Invalid port given: '%s'!", portString)
-		glg.Warnf("Using default port '%d'.", defaultPort)
+		log.Warnf("Invalid port given: '%s'!", portString)
+		log.Warnf("Using default port '%d'.", defaultPort)
 	}
 
 	return port
@@ -287,7 +287,7 @@ func getMigrateDatabase(c *Configuration) bool {
 	if migrateDatabaseString == "true" {
 		return true
 	} else if migrateDatabaseString != "false" {
-		glg.Fatalf(
+		log.Fatalf(
 			"Invalid value '%s' for configuration key '%s' given! Only 'true' and 'false' are allowed!",
 			keyDatabaseMigrate,
 			migrateDatabaseString,
@@ -307,7 +307,7 @@ func getJWTAlgorithm() string {
 	algorithm = strings.ToUpper(algorithm)
 
 	if !isJWTAlgorithmSupported(algorithm) {
-		glg.Fatalf("JWT algorithm '%s' is unknown or unsupported!", algorithm)
+		log.Fatalf("JWT algorithm '%s' is unknown or unsupported!", algorithm)
 	}
 
 	return algorithm
@@ -318,9 +318,9 @@ func getJWTKey(c *Configuration) []byte {
 
 	if key == "" {
 		if c.IsDevelopment() {
-			glg.Infof("No JWT key given, using empty string.")
+			log.Infof("No JWT key given, using empty string.")
 		} else {
-			glg.Fatalf("No JWT key given in production mode!")
+			log.Fatalf("No JWT key given in production mode!")
 		}
 	}
 
@@ -338,8 +338,8 @@ func getJWTExpirationTime() time.Duration {
 	expirationTime, err := time.ParseDuration(expirationTimeString)
 
 	if err != nil {
-		glg.Warnf("Invalid expiration time given: '%s'!", expirationTimeString)
-		glg.Warnf("Using default expiration time '%s'.", defaultJWTExpirationTime)
+		log.Warnf("Invalid expiration time given: '%s'!", expirationTimeString)
+		log.Warnf("Using default expiration time '%s'.", defaultJWTExpirationTime)
 
 		return defaultJWTExpirationTime
 	}
@@ -358,8 +358,8 @@ func getJWTRefreshTime() time.Duration {
 	refreshTime, err := time.ParseDuration(refreshTimeString)
 
 	if err != nil {
-		glg.Warnf("Invalid expiration time given: '%s'!", refreshTimeString)
-		glg.Warnf("Using default expiration time '%s'.", defaultJWTRefreshTime)
+		log.Warnf("Invalid expiration time given: '%s'!", refreshTimeString)
+		log.Warnf("Using default expiration time '%s'.", defaultJWTRefreshTime)
 
 		return defaultJWTRefreshTime
 	}

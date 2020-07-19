@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/errors"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 
 	"github.com/jinzhu/gorm"
 )
@@ -18,7 +18,7 @@ type Database struct {
 // NewDatabase creates a new database using the given configuration.
 func NewDatabase(config *config.Configuration) *Database {
 	if config == nil {
-		glg.Fatal("Configuration may not be null!")
+		log.Fatal("Configuration may not be null!")
 	}
 
 	return &Database{

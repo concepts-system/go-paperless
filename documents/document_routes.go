@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/api"
@@ -244,7 +244,7 @@ func addPagesToDocument(ec echo.Context) error {
 	}
 
 	pages := make([]PageModel, len(files))
-	glg.Infof("Appending pages to document %d...", document.ID)
+	log.Infof("Appending pages to document %d...", document.ID)
 
 	for i, page := range files {
 		stream, err := page.Open()
@@ -261,7 +261,7 @@ func addPagesToDocument(ec echo.Context) error {
 			)
 		}
 
-		glg.Debugf("Appending page %d with type '%s'", i, contentType)
+		log.Debugf("Appending page %d with type '%s'", i, contentType)
 		page, err := AppendPageToDocument(document, contentType, stream)
 
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
-	"github.com/kpango/glg"
+	log "github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/application"
@@ -75,7 +75,7 @@ func NewAuthMiddleware(
 }
 
 func (auth *AuthMiddleware) authenticateRequest(c *context) error {
-	glg.Debug("Authenticating request")
+	log.Debug("Authenticating request")
 	auth.clearAuthContext(c)
 
 	token, err := request.ParseFromRequest(
@@ -121,7 +121,7 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 // Any valid subject claim will pass the middleware.
 func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
 	return auth.Require(func(c *context) bool {
-		glg.Debugf("Checking for user authentication")
+		log.Debugf("Checking for user authentication")
 		return c.IsAuthenticated()
 	})
 }
@@ -131,7 +131,7 @@ func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
 // to pass.
 func (auth *AuthMiddleware) RequireScope(requiredScopes ...string) echo.MiddlewareFunc {
 	return auth.Require(func(c *context) bool {
-		glg.Debugf("Checking for scope: '%s'", strings.Join(requiredScopes, " "))
+		log.Debugf("Checking for scope: '%s'", strings.Join(requiredScopes, " "))
 
 		for _, requiredScope := range requiredScopes {
 			for _, claimedScope := range c.Scopes {
@@ -150,7 +150,7 @@ func (auth *AuthMiddleware) RequireScope(requiredScopes ...string) echo.Middlewa
 // from the given set of roles in order to pass.
 func (auth *AuthMiddleware) RequireRole(requiredRoles ...string) echo.MiddlewareFunc {
 	return auth.Require(func(c *context) bool {
-		glg.Debugf("Checking for any role of: %s", strings.Join(requiredRoles, ", "))
+		log.Debugf("Checking for any role of: %s", strings.Join(requiredRoles, ", "))
 
 		for _, requiredRole := range requiredRoles {
 			for _, claimedRole := range c.Roles {
