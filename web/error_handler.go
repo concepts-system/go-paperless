@@ -3,25 +3,24 @@ package web
 import (
 	"net/http"
 
-	"github.com/kpango/glg"
-
 	"github.com/concepts-system/go-paperless/application"
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 type errorResponse struct {
-	statusCode int
-	Message    string      `json:"message"`
+	StatusCode int         `json:"status"`
+	Title      string      `json:"title"`
 	Cause      string      `json:"cause,omitempty"`
 	Details    interface{} `json:"details,omitempty"`
 }
 
 func newErrorResponse(stausCode int, err error) errorResponse {
 	resp := errorResponse{
-		statusCode: stausCode,
-		Message:    err.Error(),
+		StatusCode: stausCode,
+		Title:      err.Error(),
 	}
 
 	application.RemoveErrorType(err)
@@ -46,14 +45,14 @@ func errorHandler(err error, c echo.Context) {
 		break
 	case *echo.HTTPError:
 		response = handleHTTPError(err.(*echo.HTTPError))
-		glg.Error(err)
+		log.Error(err)
 		break
 	default:
 		response = handleErrorGeneric(err)
-		glg.Error(err)
+		log.Error(err)
 	}
 
-	c.JSON(response.statusCode, response)
+	c.JSON(response.StatusCode, response)
 }
 
 func handleDomainError(err *domain.Error) errorResponse {
@@ -66,7 +65,7 @@ func handleHTTPError(err *echo.HTTPError) errorResponse {
 		message = messageStr
 	}
 
-	return errorResponse{statusCode: err.Code, Message: message}
+	return errorResponse{StatusCode: err.Code, Title: message}
 }
 
 func handleErrorGeneric(err error) errorResponse {
