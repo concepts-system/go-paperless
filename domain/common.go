@@ -3,6 +3,7 @@ package domain
 type (
 	// Text represents the type of abstract text.
 	Text string
+
 	// Count represents a generic count of objects.
 	Count int64
 

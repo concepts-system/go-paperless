@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"os"
+	"path"
 	"time"
 
 	"github.com/concepts-system/go-paperless/domain"
@@ -26,13 +27,18 @@ var (
 	release   string
 )
 
+const (
+	documentsDirectory = "documents"
+)
+
 type bootstrapper struct {
 	config   *config.Configuration
 	database *infrastructure.Database
 	server   *web.Server
 
-	users     domain.Users
-	documents domain.Documents
+	users           domain.Users
+	documents       domain.Documents
+	documentArchive domain.DocumentArchive
 
 	authService     application.AuthService
 	userService     application.UserService
@@ -104,6 +110,7 @@ func setupDependencies(bs *bootstrapper) {
 	bs.tokenKeyResolver = application.ConfigTokenKeyResolver(bs.config)
 	bs.users = infrastructure.NewUsers(bs.database)
 	bs.documents = infrastructure.NewDocuments(bs.database)
+	initializeDocumentArchive(bs)
 
 	bs.userService = application.NewUserService(bs.users)
 	bs.authService = application.NewAuthService(
@@ -111,7 +118,12 @@ func setupDependencies(bs *bootstrapper) {
 		bs.users,
 		bs.tokenKeyResolver,
 	)
-	bs.documentService = application.NewDocumentService(bs.users, bs.documents)
+
+	bs.documentService = application.NewDocumentService(
+		bs.users,
+		bs.documents,
+		bs.documentArchive,
+	)
 }
 
 func initializeServer(bs *bootstrapper) {
@@ -133,6 +145,18 @@ func registerRouters(bs *bootstrapper) {
 		// Document routes
 		web.NewDocumentRouter(bs.documentService),
 	)
+}
+
+func initializeDocumentArchive(bs *bootstrapper) {
+	documentArchive, err := infrastructure.NewDocumentArchiveFileSystemImpl(
+		path.Join(bs.config.GetDataPath(), documentsDirectory),
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to initialize document archive: %s", err.Error())
+	}
+
+	bs.documentArchive = documentArchive
 }
 
 // func initializeWorkers() {

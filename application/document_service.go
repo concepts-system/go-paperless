@@ -20,15 +20,21 @@ type DocumentService interface {
 }
 
 type documentServiceImpl struct {
-	users     domain.Users
-	documents domain.Documents
+	users           domain.Users
+	documents       domain.Documents
+	documentArchive domain.DocumentArchive
 }
 
 // NewDocumentService creates a new document service.
-func NewDocumentService(users domain.Users, documents domain.Documents) DocumentService {
+func NewDocumentService(
+	users domain.Users,
+	documents domain.Documents,
+	documentArchive domain.DocumentArchive,
+) DocumentService {
 	return &documentServiceImpl{
-		users:     users,
-		documents: documents,
+		users:           users,
+		documents:       documents,
+		documentArchive: documentArchive,
 	}
 }
 

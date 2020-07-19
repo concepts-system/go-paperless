@@ -11,6 +11,9 @@ type (
 
 	// DocumentNumber represents the of a document's unique identifier.
 	DocumentNumber uint
+
+	// ContentKey represents the type for a key pointing to a documents content.
+	ContentKey string
 )
 
 const (

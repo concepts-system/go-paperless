@@ -7,7 +7,7 @@ type (
 	// PageState represents the state of a document's page.
 	PageState string
 
-	// PageType represents the state of a document's page.
+	// PageType represents the type of a document page's content.
 	PageType string
 )
 
