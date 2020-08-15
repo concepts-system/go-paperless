@@ -131,7 +131,7 @@ func (s *authServiceImpl) AuthenicateUserByRefreshToken(token string) (*Token, e
 }
 
 func (s *authServiceImpl) SignAccessToken(token *Token) (string, error) {
-	host := s.config.GetPublicURL().Host
+	host := s.config.Server.PublicURL
 	jwtToken := jwt.NewWithClaims(
 		s.getSigningMethodHMAC(),
 		token.GetAccessTokenClaims(
@@ -141,7 +141,7 @@ func (s *authServiceImpl) SignAccessToken(token *Token) (string, error) {
 		),
 	)
 
-	accessToken, err := jwtToken.SignedString(s.config.GetJWTKey())
+	accessToken, err := jwtToken.SignedString(s.config.Security.JWTSecret)
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to sign access token: %s", err.Error())
 	}
@@ -150,7 +150,7 @@ func (s *authServiceImpl) SignAccessToken(token *Token) (string, error) {
 }
 
 func (s *authServiceImpl) SignRefreshToken(token *Token) (string, error) {
-	host := s.config.GetPublicURL().Host
+	host := s.config.Server.PublicURL
 	jwtToken := jwt.NewWithClaims(
 		s.getSigningMethodHMAC(),
 		token.GetRefreshTokenClaims(
@@ -160,7 +160,7 @@ func (s *authServiceImpl) SignRefreshToken(token *Token) (string, error) {
 		),
 	)
 
-	refreshToken, err := jwtToken.SignedString(s.config.GetJWTKey())
+	refreshToken, err := jwtToken.SignedString(s.config.Security.JWTSecret)
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to sign refresh token: %s", err.Error())
 	}
@@ -239,16 +239,16 @@ func (s *authServiceImpl) userToken(user *domain.User) *Token {
 	return &Token{
 		Username:       string(user.Username),
 		Roles:          s.unwrapRoles(user),
-		Expires:        time.Now().Add(s.config.GetJWTExpirationTime()),
-		RefreshExpires: time.Now().Add(s.config.GetJWTRefreshTime()),
+		Expires:        time.Now().Add(s.config.Security.JWTExpirationTime),
+		RefreshExpires: time.Now().Add(s.config.Security.JWTRefreshTime),
 	}
 }
 
 func (s *authServiceImpl) getSigningMethodHMAC() *jwt.SigningMethodHMAC {
-	switch s.config.GetJWTAlgorithm() {
-	case config.JWTAlgorithmHS384:
+	switch s.config.Security.JWTAlgorithm {
+	case "HS384":
 		return jwt.SigningMethodHS384
-	case config.JWTAlgorithmHS512:
+	case "HS512":
 		return jwt.SigningMethodHS512
 	default:
 		return jwt.SigningMethodHS256

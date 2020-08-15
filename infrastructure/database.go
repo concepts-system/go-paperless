@@ -30,15 +30,15 @@ func NewDatabase(config *config.Configuration) *Database {
 func (db *Database) Connect() error {
 	var err error
 	db.DB, err = gorm.Open(
-		db.config.GetDatabaseType(),
-		db.config.GetDatabaseURL(),
+		db.config.Database.Type,
+		db.config.Database.URL,
 	)
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to connect to database")
 	}
 
-	if db.config.IsDevelopment() {
+	if !db.config.IsProductionMode() {
 		db.DB.LogMode(true)
 	}
 

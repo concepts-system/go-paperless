@@ -15,7 +15,7 @@ type (
 // the given config.
 func ConfigTokenKeyResolver(config *config.Configuration) TokenKeyResolver {
 	return func(token *jwt.Token) (interface{}, error) {
-		b := config.GetJWTKey()
+		b := config.Security.JWTSecret
 		return b, nil
 	}
 }

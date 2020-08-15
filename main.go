@@ -76,7 +76,7 @@ func main() {
 
 func loadConfiguration(bs *bootstrapper) {
 	log.Info("Loading configuration...")
-	bs.config = config.LoadConfiguration(release == "true")
+	bs.config = config.Load(release == "true")
 	createDirectories(bs)
 }
 
@@ -84,7 +84,7 @@ func prepareDatabase(bs *bootstrapper) {
 	bs.database = infrastructure.NewDatabase(bs.config)
 	bs.database.Connect()
 
-	if bs.config.MigrateDatabase() {
+	if bs.config.Database.MigrateDatabase {
 		log.Info("Running migrations...")
 
 		// Migrate to most recent version by default.
@@ -101,8 +101,8 @@ func createDirectories(bs *bootstrapper) {
 	config := bs.config
 
 	// Create data directory
-	if _, err := os.Stat(config.GetDataPath()); os.IsNotExist(err) {
-		os.MkdirAll(config.GetDataPath(), os.ModePerm)
+	if _, err := os.Stat(config.Storage.DataPath); os.IsNotExist(err) {
+		os.MkdirAll(config.Storage.DataPath, os.ModePerm)
 	}
 }
 
@@ -149,7 +149,7 @@ func registerRouters(bs *bootstrapper) {
 
 func initializeDocumentArchive(bs *bootstrapper) {
 	documentArchive, err := infrastructure.NewDocumentArchiveFileSystemImpl(
-		path.Join(bs.config.GetDataPath(), documentsDirectory),
+		path.Join(bs.config.Storage.DataPath, documentsDirectory),
 	)
 
 	if err != nil {

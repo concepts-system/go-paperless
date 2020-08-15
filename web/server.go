@@ -38,7 +38,7 @@ func NewServer(
 
 	// Configure echo instance
 	server.echo = echo.New()
-	server.echo.Debug = config.IsDevelopment()
+	server.echo.Debug = !config.IsProductionMode()
 	server.echo.HideBanner = true
 	server.echo.HidePort = true
 	server.echo.HTTPErrorHandler = errorHandler
@@ -67,7 +67,7 @@ func (server *Server) Register(routers ...Router) {
 
 // Start runs the server in a blocking way.
 func (server *Server) Start() error {
-	endpoint := fmt.Sprintf(":%d", server.config.GetPort())
-	log.Successf("Accepting connection on %s", endpoint)
+	endpoint := fmt.Sprintf(":%d", server.config.Server.Port)
+	log.Successf("Accepting connections on %s", endpoint)
 	return server.echo.Start(endpoint)
 }

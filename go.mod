@@ -20,6 +20,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kpango/glg v1.5.1
 	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/echo/v4 v4.1.16
@@ -37,6 +38,7 @@ require (
 	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
+	go.uber.org/config v1.4.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	golang.org/x/sys v0.0.0-20200814200057-3d37ad5750ed // indirect
