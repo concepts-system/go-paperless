@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/application"
+	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
 )
 
@@ -28,14 +29,14 @@ func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	apiGroup := group.Group("/api", auth.RequireScope(application.TokenScopeAPI))
 	userGroup := apiGroup.Group("/user", auth.RequireAuthentication())
 	userGroup.GET("/me", r.getCurrentUser)
-	userGroup.PUT("/me", r.updateCurrentUser)
+	userGroup.PATCH("/me", r.updateCurrentUser)
 	userGroup.PUT("/me/password", r.updateCurrentUsersPassword)
 
 	usersGroup := apiGroup.Group("/users", auth.RequireAdminRole())
 	usersGroup.GET("", r.getUsers)
 	usersGroup.POST("", r.createUser)
 	usersGroup.GET("/:username", r.getUser)
-	usersGroup.PUT("/:username", r.updateUser)
+	usersGroup.PATCH("/:username", r.updateUser)
 	usersGroup.DELETE("/:username", r.deleteUser)
 }
 
@@ -66,6 +67,7 @@ func (r *userRouter) updateCurrentUser(ec echo.Context) error {
 		return err
 	}
 
+	validator.user.Username = domain.Name(*c.Username)
 	validator.user.IsActive = user.IsActive
 	validator.user.IsAdmin = user.IsAdmin
 
@@ -145,6 +147,7 @@ func (r *userRouter) createUser(ec echo.Context) error {
 
 func (r *userRouter) updateUser(ec echo.Context) error {
 	c, _ := ec.(*context)
+
 	username := r.bindUsername(c)
 	user, err := r.userService.GetUserByUsername(username)
 	if err != nil {
@@ -168,6 +171,7 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 		}
 	}
 
+	validator.user.Username = domain.Name(*c.Username)
 	user, err = r.userService.UpdateUser(&validator.user, validator.Password)
 	if err != nil {
 		return err

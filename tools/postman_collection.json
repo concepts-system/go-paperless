@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "89803234-39f7-422a-9e5c-955547ae96a6",
+		"_postman_id": "20b160c8-e844-46d7-b3e4-5cbbd9646dc9",
 		"name": "Go Paperless",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -127,7 +127,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Users",
@@ -137,10 +138,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/user/me",
 							"host": [
@@ -158,7 +155,7 @@
 				{
 					"name": "Update my User",
 					"request": {
-						"method": "PUT",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -169,7 +166,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"surname\": \"Updated\",\n    \"forename\": \"User\"\n}"
+							"raw": "{\n\t\"username\": \"abcdef\",\n    \"surname\": \"Updated\",\n    \"forename\": \"Usesrssss\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/user/me",
@@ -221,10 +218,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users?size=10&offset=0",
 							"host": [
@@ -253,10 +246,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users/user",
 							"host": [
@@ -303,7 +292,7 @@
 				{
 					"name": "Update User",
 					"request": {
-						"method": "PUT",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -375,7 +364,8 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "Documents",
@@ -392,10 +382,6 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents/search?query=title&highlight=html",
 							"host": [
@@ -432,10 +418,6 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents",
 							"host": [
@@ -454,10 +436,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents/1",
 							"host": [
@@ -543,10 +521,6 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents/1/raw",
 							"host": [
@@ -574,10 +548,6 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents/1/pages",
 							"host": [
@@ -598,10 +568,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "{{baseUrl}}/api/documents/1/pages/0",
 							"host": [
@@ -635,8 +601,8 @@
 							"formdata": [
 								{
 									"key": "pages[]",
-									"type": "file",
-									"src": ""
+									"value": "",
+									"type": "file"
 								}
 							]
 						},
@@ -656,7 +622,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"auth": {
@@ -690,5 +657,6 @@
 				]
 			}
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
