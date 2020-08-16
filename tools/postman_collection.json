@@ -139,12 +139,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/user/me",
+							"raw": "{{baseUrl}}/api/v1/user/me",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"user",
 								"me"
 							]
@@ -166,15 +167,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"username\": \"abcdef\",\n    \"surname\": \"Updated\",\n    \"forename\": \"Usesrssss\"\n}"
+							"raw": "{\n    \"surname\": \"Updated\",\n    \"forename\": \"Name\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/user/me",
+							"raw": "{{baseUrl}}/api/v1/user/me",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"user",
 								"me"
 							]
@@ -199,12 +201,13 @@
 							"raw": "{\n\t\"currentPassword\": \"password\",\n\t\"newPassword\": \"newPassword\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/user/me/password",
+							"raw": "{{baseUrl}}/api/v1/user/me/password",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"user",
 								"me",
 								"password"
@@ -219,12 +222,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/users?size=10&offset=0",
+							"raw": "{{baseUrl}}/api/v1/users?size=10&offset=0",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"users"
 							],
 							"query": [
@@ -247,12 +251,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/users/user",
+							"raw": "{{baseUrl}}/api/v1/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"users",
 								"user"
 							]
@@ -277,12 +282,13 @@
 							"raw": "{\n\t\"username\": \"user\",\n\t\"forename\": \"Test\",\n\t\"surname\": \"User\",\n\t\"password\": \"password\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users",
+							"raw": "{{baseUrl}}/api/v1/users",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"users"
 							]
 						}
@@ -306,12 +312,13 @@
 							"raw": "{\n\t\"forename\": \"Updated\",\n\t\"surname\": \"Name\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users/user",
+							"raw": "{{baseUrl}}/api/v1/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"users",
 								"user"
 							]
@@ -329,12 +336,13 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/users/user",
+							"raw": "{{baseUrl}}/api/v1/users/user",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"users",
 								"user"
 							]
