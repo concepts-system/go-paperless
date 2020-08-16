@@ -19,7 +19,7 @@ install:
 	go install
 
 test:
-	$(GOTEST) ./...
+	$(GOTEST) $(shell go list ./... | grep -v documents)
 
 format:
 	go fmt ./...
