@@ -19,14 +19,14 @@ install:
 	go install
 
 update-dependencies:
-    go get -u -t ./...
-    make clean-dependencies
+	go get -u -t ./...
+	make clean-dependencies
 
 clean-dependencies:
-    go mod tidy
+	go mod tidy
 
 lint:
-    golangci-lint run
+	golangci-lint run
 
 test:
 	$(GOTEST) ./...
