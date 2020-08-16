@@ -11,19 +11,19 @@ type ErrorType string
 
 const (
 	// InternalServerError specifies an unknown error.
-	InternalServerError = ErrorType(iota)
+	InternalServerError = ErrorType("INTERNAL_SERVER")
 	// BadRequestError specifies a validation realted error.
-	BadRequestError
+	BadRequestError = ErrorType("BAD_REQUEST")
 	// UnauthorizedError specifies authentication related errors.
-	UnauthorizedError
+	UnauthorizedError = ErrorType("UNAUTHORIZED")
 	// ForbiddenError specifies authorization (permission) related errors.
-	ForbiddenError
+	ForbiddenError = ErrorType("FORBIDDEN")
 	// NotFoundError specifies errors related with non-existent resources.
-	NotFoundError
+	NotFoundError = ErrorType("NOT_FOUND")
 	// ConflictError specifies errors related with a resource conflict.
-	ConflictError
+	ConflictError = ErrorType("CONFLICT")
 	// UnexpectedError specifies errors occurring unexpectedly, caused by technical issues.
-	UnexpectedError
+	UnexpectedError = ErrorType("UNEXPECTED")
 )
 
 // New creates a new error for the given message.
