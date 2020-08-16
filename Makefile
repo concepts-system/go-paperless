@@ -18,8 +18,18 @@ clean:
 install:
 	go install
 
+update-dependencies:
+    go get -u -t ./...
+    make clean-dependencies
+
+clean-dependencies:
+    go mod tidy
+
+lint:
+    golangci-lint run
+
 test:
-	$(GOTEST) $(shell go list ./... | grep -v documents)
+	$(GOTEST) ./...
 
 format:
 	go fmt ./...
@@ -37,4 +47,4 @@ release:
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)" || true
 	git push origin "v$(VERSION)"
 
-.PHONY: clean install test fmt build image image-release release
+.PHONY: clean install test fmt build image image-release release lint update-dependencies clean-dependencies

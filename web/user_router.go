@@ -9,8 +9,6 @@ import (
 	"github.com/concepts-system/go-paperless/errors"
 )
 
-var errorUsernameAlreadyExists = application.ConflictError.Newf("A user with the given username does already exist")
-
 type userRouter struct {
 	userService application.UserService
 }
@@ -25,9 +23,13 @@ func NewUserRouter(userService application.UserService) Router {
 
 // DefineRoutes defines the routes for auth functionality.
 func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
-	apiGroup := group.Group("/api/v1", auth.RequireScope(application.TokenScopeAPI))
+	apiGroup := group.Group(
+		"/api/v1",
+		auth.RequireAuthentication(),
+		auth.RequireScope(application.TokenScopeAPI),
+	)
 
-	userGroup := apiGroup.Group("/user", auth.RequireAuthentication())
+	userGroup := apiGroup.Group("/user")
 	userGroup.GET("/me", r.getCurrentUser)
 	userGroup.PATCH("/me", r.updateCurrentUser)
 	userGroup.PUT("/me/password", r.updateCurrentUsersPassword)

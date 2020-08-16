@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator"
-	log "github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
+
 	"github.com/labstack/echo/v4/middleware"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/application"
 	"github.com/concepts-system/go-paperless/config"
@@ -46,7 +47,7 @@ func NewServer(
 
 	// Register middlewares
 	server.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "${time_rfc3339}\t${method}\t${uri} -> status=${status} [${latency_human}] | ${error}\n",
+		Format: "${time_rfc3339} [INFO] [server] ${method} ${uri} -> ${status} in ${latency_human} | ${error}\n",
 	}))
 	server.echo.Use(middleware.Recover())
 	server.echo.Use(extendedContext)
@@ -68,6 +69,6 @@ func (server *Server) Register(routers ...Router) {
 // Start runs the server in a blocking way.
 func (server *Server) Start() error {
 	endpoint := fmt.Sprintf(":%d", server.config.Server.Port)
-	log.Successf("Accepting connections on %s", endpoint)
+	log.Infof("Accepting connections on %s", endpoint)
 	return server.echo.Start(endpoint)
 }

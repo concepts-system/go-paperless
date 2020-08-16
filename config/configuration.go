@@ -8,7 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	log "github.com/kpango/glg"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -92,13 +92,13 @@ func Load(production bool) *Configuration {
 }
 
 func loadProfiles(cfg *Configuration) {
-	godotenv.Load(".env.local")
-	godotenv.Load(".env")
+	_ = godotenv.Load(".env.local")
+	_ = godotenv.Load(".env")
 
 	for _, profile := range cfg.Profiles {
 		log.Infof("Loading configuration for profile '%s'...", profile)
 		prefix := fmt.Sprintf(".env.%s", profile)
-		godotenv.Load(prefix, prefix+".local")
+		_ = godotenv.Load(prefix, prefix+".local")
 	}
 }
 

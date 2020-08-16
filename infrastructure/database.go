@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/errors"
-	log "github.com/kpango/glg"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jinzhu/gorm"
 )

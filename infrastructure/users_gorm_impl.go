@@ -101,7 +101,7 @@ func (u usersGormImpl) Update(user *domain.User) (*domain.User, error) {
 
 func (u usersGormImpl) Delete(user *domain.User) error {
 	model, err := u.getUserModelByUsername(string(user.Username))
-	if user == nil {
+	if model == nil {
 		return err
 	}
 

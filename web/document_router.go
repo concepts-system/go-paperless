@@ -106,12 +106,12 @@ func (r *documentRouter) bindDocumentNumber(c echo.Context) (uint, error) {
 	return uint(id), nil
 }
 
-func bindPageNumber(c echo.Context) (uint, error) {
-	id, err := strconv.ParseUint(c.Param("pageNumber"), 10, 32)
+// func bindPageNumber(c echo.Context) (uint, error) {
+// 	id, err := strconv.ParseUint(c.Param("pageNumber"), 10, 32)
 
-	if err != nil || id < 0 {
-		return 0, application.BadRequestError.New("Page number has to be a non-negative integer")
-	}
+// 	if err != nil || id < 0 {
+// 		return 0, application.BadRequestError.New("Page number has to be a non-negative integer")
+// 	}
 
-	return uint(id), nil
-}
+// 	return uint(id), nil
+// }

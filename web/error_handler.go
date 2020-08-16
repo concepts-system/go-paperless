@@ -7,7 +7,7 @@ import (
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
+	log "github.com/sirupsen/logrus"
 )
 
 type errorResponse struct {
@@ -23,7 +23,7 @@ func newErrorResponse(stausCode int, err error) errorResponse {
 		Title:      err.Error(),
 	}
 
-	application.RemoveErrorType(err)
+	err = application.RemoveErrorType(err)
 
 	if context := errors.GetContext(err); context != nil {
 		resp.Details = context
@@ -39,20 +39,18 @@ func newErrorResponse(stausCode int, err error) errorResponse {
 func errorHandler(err error, c echo.Context) {
 	var response errorResponse
 
-	switch err.(type) {
+	switch err := err.(type) {
 	case *domain.Error:
-		response = handleDomainError(err.(*domain.Error))
-		break
+		response = handleDomainError(err)
 	case *echo.HTTPError:
-		response = handleHTTPError(err.(*echo.HTTPError))
+		response = handleHTTPError(err)
 		log.Error(err)
-		break
 	default:
 		response = handleErrorGeneric(err)
 		log.Error(err)
 	}
 
-	c.JSON(response.StatusCode, response)
+	_ = c.JSON(response.StatusCode, response)
 }
 
 func handleDomainError(err *domain.Error) errorResponse {

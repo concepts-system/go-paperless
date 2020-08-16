@@ -31,10 +31,10 @@ func TestSendAndReceiveDocumentMessage(t *testing.T) {
 	correctMailbox := make(chan domain.DocumentMessage)
 	wrongMailbox := make(chan domain.DocumentMessage)
 
-	tubeMail.RegisterDocumentMessageReceiver(testMailBox, forwardDocumentMessageToChannel(correctMailbox))
-	tubeMail.RegisterDocumentMessageReceiver(wrongMailBox, forwardDocumentMessageToChannel(wrongMailbox))
+	_ = tubeMail.RegisterDocumentMessageReceiver(testMailBox, forwardDocumentMessageToChannel(correctMailbox))
+	_ = tubeMail.RegisterDocumentMessageReceiver(wrongMailBox, forwardDocumentMessageToChannel(wrongMailbox))
 
-	tubeMail.SendDocumentMessage(testMailBox, testDocumentMessage)
+	_ = tubeMail.SendDocumentMessage(testMailBox, testDocumentMessage)
 
 	assertReceiveDocumentMessage(t, correctMailbox, testDocumentMessage)
 	assertNoDocumentMessageReceived(t, wrongMailbox)
@@ -45,10 +45,10 @@ func TestSendAndReceiveDocumentPageMessage(t *testing.T) {
 	correctMailbox := make(chan domain.DocumentPageMessage)
 	wrongMailbox := make(chan domain.DocumentPageMessage)
 
-	tubeMail.RegisterDocumentPageMessageReceiver(testMailBox, forwardDocumentPageMessageToChannel(correctMailbox))
-	tubeMail.RegisterDocumentPageMessageReceiver(wrongMailBox, forwardDocumentPageMessageToChannel(wrongMailbox))
+	_ = tubeMail.RegisterDocumentPageMessageReceiver(testMailBox, forwardDocumentPageMessageToChannel(correctMailbox))
+	_ = tubeMail.RegisterDocumentPageMessageReceiver(wrongMailBox, forwardDocumentPageMessageToChannel(wrongMailbox))
 
-	tubeMail.SendDocumentPageMessage(testMailBox, testDocumentPageMessage)
+	_ = tubeMail.SendDocumentPageMessage(testMailBox, testDocumentPageMessage)
 
 	assertReceiveDocumentPageMessage(t, correctMailbox, testDocumentPageMessage)
 	assertNoDocumentPageMessageReceived(t, wrongMailbox)

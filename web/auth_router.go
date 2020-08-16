@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	keyGrantType          = "grant_type"
 	grantTypePassword     = "password"
 	grantTypeRefreshToken = "refresh_token"
 )

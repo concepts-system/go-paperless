@@ -67,7 +67,7 @@ func (c *context) HasRole(role string) bool {
 // to default values (Offset: 0, Size: 10) if some arguments are missing or wrong.
 func (c *context) BindPaging() pageRequest {
 	pageRequest := pageRequest{}
-	c.Bind(&pageRequest)
+	_ = c.Bind(&pageRequest)
 
 	if pageRequest.Offset < 0 {
 		pageRequest.Offset = 0
@@ -131,6 +131,7 @@ func (c *context) BinaryAttachment(
 ) error {
 	response := c.Response()
 	headers := response.Header()
+	defer content.Close()
 
 	response.Status = http.StatusOK
 	headers.Set(HeaderContentType, contentType)
@@ -140,8 +141,8 @@ func (c *context) BinaryAttachment(
 		headers.Set(HeaderContentLength, strconv.FormatInt(contentLength, 10))
 	}
 
-	io.Copy(response.Writer, content)
-	return content.Close()
+	_, err := io.Copy(response.Writer, content)
+	return err
 }
 
 // extendedContext defines an echo middleware for using the extended context.

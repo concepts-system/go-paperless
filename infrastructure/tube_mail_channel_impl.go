@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"github.com/concepts-system/go-paperless/domain"
-	log "github.com/kpango/glg"
+	log "github.com/sirupsen/logrus"
 )
 
 type (

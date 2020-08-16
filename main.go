@@ -15,7 +15,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
-	log "github.com/kpango/glg"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/web"
@@ -51,6 +51,8 @@ func main() {
 	start := time.Now()
 	bs := &bootstrapper{}
 
+	loadConfiguration(bs)
+
 	if version == "" {
 		version = "DEV-SNAPSHOT"
 	}
@@ -62,7 +64,6 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	log.Infof("Starting application %s (%s)", version, buildDate)
 
-	loadConfiguration(bs)
 	prepareDatabase(bs)
 	defer bs.database.Close()
 
@@ -70,19 +71,25 @@ func main() {
 	initializeServer(bs)
 	ensureUserExists(bs)
 
-	log.Successf("Start-up completed in %v", time.Since(start))
-	bs.server.Start()
+	log.Infof("Bootstrap completed in %v", time.Since(start))
+
+	if err := bs.server.Start(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
 func loadConfiguration(bs *bootstrapper) {
-	log.Info("Loading configuration...")
 	bs.config = config.Load(release == "true")
+	config.ConfigureLogging(bs.config)
+	log.Info("Configuration loaded")
 	createDirectories(bs)
 }
 
 func prepareDatabase(bs *bootstrapper) {
 	bs.database = infrastructure.NewDatabase(bs.config)
-	bs.database.Connect()
+	if err := bs.database.Connect(); err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
 
 	if bs.config.Database.MigrateDatabase {
 		log.Info("Running migrations...")
@@ -92,7 +99,6 @@ func prepareDatabase(bs *bootstrapper) {
 		if err := bs.database.Migrate(); err != nil {
 			log.Fatalf("Error while migrating database: %v", err)
 		}
-
 	}
 }
 
@@ -102,7 +108,11 @@ func createDirectories(bs *bootstrapper) {
 
 	// Create data directory
 	if _, err := os.Stat(config.Storage.DataPath); os.IsNotExist(err) {
-		os.MkdirAll(config.Storage.DataPath, os.ModePerm)
+		err := os.MkdirAll(config.Storage.DataPath, os.ModePerm)
+
+		if err != nil {
+			log.Errorf("Failed to setup data directory: %v", err)
+		}
 	}
 }
 
@@ -189,7 +199,7 @@ func ensureUserExists(bs *bootstrapper) {
 		IsActive: true,
 	})
 
-	defaultUser, err = bs.userService.CreateNewUser(defaultUser, "admin")
+	_, err = bs.userService.CreateNewUser(defaultUser, "admin")
 
 	if err != nil {
 		log.Fatalf("Error while creating default user: %v", err)

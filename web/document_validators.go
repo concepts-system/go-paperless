@@ -29,10 +29,10 @@ func newDocumentValidator() *documentValidator {
 	return &documentValidator{}
 }
 
-func newDocumentValidatorOf(document *domain.Document) *documentValidator {
-	validator := newDocumentValidator()
-	validator.Title = string(document.Title)
-	validator.Date = document.Date
+// func newDocumentValidatorOf(document *domain.Document) *documentValidator {
+// 	validator := newDocumentValidator()
+// 	validator.Title = string(document.Title)
+// 	validator.Date = document.Date
 
-	return validator
-}
+// 	return validator
+// }

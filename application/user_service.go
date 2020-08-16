@@ -96,7 +96,9 @@ func (s *userServiceImpl) UpdateUser(
 	originalUser.IsAdmin = user.IsAdmin
 
 	if password != nil {
-		s.passwordHelper.setUserPassword(originalUser, *password)
+		if err := s.passwordHelper.setUserPassword(originalUser, *password); err != nil {
+			return nil, err
+		}
 	}
 
 	user, err = s.users.Update(originalUser)
@@ -120,7 +122,10 @@ func (s *userServiceImpl) UpdateUserPassword(
 		return errors.AddContext(err, "currentPassword", "value")
 	}
 
-	s.passwordHelper.setUserPassword(user, newPassword)
+	if err := s.passwordHelper.setUserPassword(user, newPassword); err != nil {
+		return err
+	}
+
 	if _, err := s.users.Update(user); err != nil {
 		return err
 	}

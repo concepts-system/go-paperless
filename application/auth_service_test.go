@@ -22,7 +22,7 @@ func testUser(suite *serviceTestSuite) *domain.User {
 		IsAdmin:  false,
 	})
 
-	suite.PasswordHelper.setUserPassword(user, testUserPassword)
+	_ = suite.PasswordHelper.setUserPassword(user, testUserPassword)
 	return user
 }
 

@@ -6,8 +6,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
-	log "github.com/kpango/glg"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/application"
 )
@@ -30,9 +30,7 @@ var authorizationHeaderExtractor = &request.PostExtractionFilter{
 	Filter: func(headerValue string) (string, error) {
 		length := len(authorizationBearerPrefix)
 
-		if len(headerValue) >= length &&
-			strings.ToLower(headerValue[0:length]) == strings.ToLower(authorizationBearerPrefix) {
-
+		if len(headerValue) >= length && strings.EqualFold(headerValue[0:length], authorizationBearerPrefix) {
 			return headerValue[length:], nil
 		}
 
@@ -53,7 +51,7 @@ func (t *tokenQueryParameterExtractor) ExtractToken(r *http.Request) (string, er
 
 type (
 	// filter defines a function type for defining a custom authorization condition.
-	filter = func(c *context) bool
+	filter = func(c *context) error
 
 	// AuthMiddleware defines which types of filters are provided by the auth middleware.
 	AuthMiddleware struct {
@@ -103,11 +101,11 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 			c, _ := ec.(*context)
 
 			if !c.IsAuthenticated() {
-				auth.authenticateRequest(c)
+				_ = auth.authenticateRequest(c)
 			}
 
-			if authorized := filter(c); !authorized {
-				return auth.errorForbidden()
+			if err := filter(c); err != nil {
+				return err
 			}
 
 			return h(c)
@@ -120,9 +118,14 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 //
 // Any valid subject claim will pass the middleware.
 func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
-	return auth.Require(func(c *context) bool {
-		log.Debugf("Checking for user authentication")
-		return c.IsAuthenticated()
+	return auth.Require(func(c *context) error {
+		log.Debugf("Checking for authentication")
+
+		if !c.IsAuthenticated() {
+			return auth.errorUnauthorized()
+		}
+
+		return nil
 	})
 }
 
@@ -130,18 +133,18 @@ func (auth *AuthMiddleware) RequireAuthentication() echo.MiddlewareFunc {
 // authentication. At least one of the given scopes needs to be granted in order
 // to pass.
 func (auth *AuthMiddleware) RequireScope(requiredScopes ...string) echo.MiddlewareFunc {
-	return auth.Require(func(c *context) bool {
+	return auth.Require(func(c *context) error {
 		log.Debugf("Checking for scope: '%s'", strings.Join(requiredScopes, " "))
 
 		for _, requiredScope := range requiredScopes {
 			for _, claimedScope := range c.Scopes {
 				if requiredScope == claimedScope {
-					return true
+					return nil
 				}
 			}
 		}
 
-		return false
+		return auth.errorForbidden()
 	})
 }
 
@@ -149,18 +152,18 @@ func (auth *AuthMiddleware) RequireScope(requiredScopes ...string) echo.Middlewa
 // needing user authentication. The authenticated user needs to have any role
 // from the given set of roles in order to pass.
 func (auth *AuthMiddleware) RequireRole(requiredRoles ...string) echo.MiddlewareFunc {
-	return auth.Require(func(c *context) bool {
+	return auth.Require(func(c *context) error {
 		log.Debugf("Checking for any role of: %s", strings.Join(requiredRoles, ", "))
 
 		for _, requiredRole := range requiredRoles {
 			for _, claimedRole := range c.Roles {
 				if requiredRole == claimedRole {
-					return true
+					return nil
 				}
 			}
 		}
 
-		return false
+		return auth.errorForbidden()
 	})
 }
 
@@ -192,10 +195,6 @@ func (auth *AuthMiddleware) clearAuthContext(c *context) {
 }
 
 /* Common Errors */
-
-func (auth *AuthMiddleware) errorInvalidToken() error {
-	return application.UnauthorizedError.New("Invalid token")
-}
 
 func (auth *AuthMiddleware) errorUnauthorized() error {
 	return application.UnauthorizedError.New("Unauthorized")
