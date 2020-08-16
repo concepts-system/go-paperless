@@ -75,7 +75,7 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 	}
 
 	document.Owner = owner
-	document.State = domain.DocumentStateNew
+	document.State = domain.DocumentStateEdited
 	document.Type = ""
 	document.Fingerprint = ""
 	document.Pages = nil

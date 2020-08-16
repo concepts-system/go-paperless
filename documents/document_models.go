@@ -19,16 +19,16 @@ const (
 	// DocumentStateDirtyPending marks a document as dirty/pending.
 	// A document in this state has dirty pages but is not ready for generation,
 	// as not all pages are fully indexed.
-	DocumentStateDirtyPending = "DIRTY_PENDING"
+	DocumentStateDirtyPending = "EDITED"
 
 	// DocumentStateDirty marks a document as dirty (out of sync and ready for generation).
-	DocumentStateDirty = "DIRTY"
+	DocumentStateDirty = "PROCESSED"
 
 	// DocumentStateIndexed marks a document as indexed.
 	DocumentStateIndexed = "INDEXED"
 
-	// DocumentStateClean marks a document as clean (in sync).
-	DocumentStateClean = "CLEAN"
+	// DocumentStateClean marks a document as archived (in sync).
+	DocumentStateClean = "ARCHIVED"
 )
 
 // DocumentModel defines the data model for documents managed by the system.

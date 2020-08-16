@@ -22,8 +22,20 @@ const (
 )
 
 const (
-	// DocumentStateNew represents the state new documents are in.
-	DocumentStateNew DocumentState = "NEW"
+	// DocumentStateEdited marks a document edited.
+	// A document in this state has edited pages but is not ready for
+	// further processing, as not all pages have been processed.
+	DocumentStateEdited = "EDITED"
+
+	// DocumentStateDirty marks a document processed, meaning all pages are
+	// processed so that the document is ready for further processing.
+	DocumentStateDirty = "PROCESSED"
+
+	// DocumentStateIndexed marks a document as indexed.
+	DocumentStateIndexed = "INDEXED"
+
+	// DocumentStateArchived marks a document as archived (in sync).
+	DocumentStateArchived = "ARCHIVED"
 )
 
 // Document represents a document managed by the system.
@@ -36,4 +48,16 @@ type Document struct {
 	Fingerprint    Fingerprint
 	Type           DocumentType
 	Pages          []DocumentPage
+}
+
+// AreAllPagesInState returns a boolean value indicating whether all the
+// given documents pages are in the given page state.
+func (d Document) AreAllPagesInState(state PageState) bool {
+	for _, page := range d.Pages {
+		if page.State != state {
+			return false
+		}
+	}
+
+	return true
 }
