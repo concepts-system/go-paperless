@@ -6,7 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/concepts-system/go-paperless/application"
-	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
 )
 
@@ -27,6 +26,7 @@ func NewUserRouter(userService application.UserService) Router {
 // DefineRoutes defines the routes for auth functionality.
 func (r *userRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	apiGroup := group.Group("/api", auth.RequireScope(application.TokenScopeAPI))
+
 	userGroup := apiGroup.Group("/user", auth.RequireAuthentication())
 	userGroup.GET("/me", r.getCurrentUser)
 	userGroup.PATCH("/me", r.updateCurrentUser)
@@ -62,14 +62,10 @@ func (r *userRouter) updateCurrentUser(ec echo.Context) error {
 		return err
 	}
 
-	validator := newUserValidatorOf(user, false)
+	validator := newCurrentUserpdateValidatorOf(user)
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
-
-	validator.user.Username = domain.Name(*c.Username)
-	validator.user.IsActive = user.IsActive
-	validator.user.IsAdmin = user.IsAdmin
 
 	user, err = r.userService.UpdateUser(&validator.user, nil)
 	if err != nil {
@@ -114,27 +110,27 @@ func (r *userRouter) getUsers(ec echo.Context) error {
 	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
 }
 
-func (r *userRouter) getUser(c echo.Context) error {
-	user, err := r.userService.GetUserByUsername(r.bindUsername(c))
+func (r *userRouter) getUser(ec echo.Context) error {
+	user, err := r.userService.GetUserByUsername(r.bindUsername(ec))
 	if err != nil {
 		return err
 	}
 
-	serializer := userSerializer{c, user}
-	return c.JSON(http.StatusOK, serializer.Response())
+	serializer := userSerializer{ec, user}
+	return ec.JSON(http.StatusOK, serializer.Response())
 }
 
 func (r *userRouter) createUser(ec echo.Context) error {
 	c, _ := ec.(*context)
 
-	validator := newUserValidator(true)
+	validator := newUserCreationValidator()
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
 
 	user, err := r.userService.CreateNewUser(
 		&validator.user,
-		*validator.Password,
+		validator.Password,
 	)
 
 	if err != nil {
@@ -154,7 +150,7 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 		return err
 	}
 
-	validator := newUserValidatorOf(user, false)
+	validator := newUserUpdateValidatorOf(user)
 	if err := validator.Bind(c); err != nil {
 		return err
 	}
@@ -171,8 +167,7 @@ func (r *userRouter) updateUser(ec echo.Context) error {
 		}
 	}
 
-	validator.user.Username = domain.Name(*c.Username)
-	user, err = r.userService.UpdateUser(&validator.user, validator.Password)
+	user, err = r.userService.UpdateUser(&validator.user, nil)
 	if err != nil {
 		return err
 	}
