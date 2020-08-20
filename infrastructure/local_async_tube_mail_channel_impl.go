@@ -7,20 +7,20 @@ import (
 
 type receivers = map[domain.MailBox][]domain.TubeMailReceiver
 
-type tubeMailChannelImpl struct {
+type localAsyncTubeMailImpl struct {
 	bufferSize int
 	receivers  receivers
 }
 
 // NewTubeMailChannelImpl creates a new tube mail implementation using local channels.
 func NewTubeMailChannelImpl() domain.TubeMail {
-	return &tubeMailChannelImpl{
+	return &localAsyncTubeMailImpl{
 		bufferSize: 128,
 		receivers:  make(receivers),
 	}
 }
 
-func (t *tubeMailChannelImpl) RegisterReceiver(
+func (t *localAsyncTubeMailImpl) RegisterReceiver(
 	mailBox domain.MailBox,
 	receiver domain.TubeMailReceiver,
 ) error {
@@ -33,7 +33,7 @@ func (t *tubeMailChannelImpl) RegisterReceiver(
 	return nil
 }
 
-func (t *tubeMailChannelImpl) SendMessage(
+func (t *localAsyncTubeMailImpl) SendMessage(
 	target domain.MailBox,
 	message interface{},
 ) error {
@@ -51,7 +51,7 @@ func (t *tubeMailChannelImpl) SendMessage(
 	return nil
 }
 
-func (t *tubeMailChannelImpl) sendMessage(
+func (t *localAsyncTubeMailImpl) sendMessage(
 	message interface{},
 	receiver domain.TubeMailReceiver,
 ) {
