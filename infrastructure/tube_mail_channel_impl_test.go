@@ -15,60 +15,42 @@ const (
 	wrongMailBox = domain.MailBox("wrong")
 )
 
-var (
-	testDocumentMessage = domain.DocumentMessage{
-		DocumentNumber: domain.DocumentNumber(123),
-	}
+type testMessage struct {
+	field string
+}
 
-	testDocumentPageMessage = domain.DocumentPageMessage{
-		DocumentNumber: domain.DocumentNumber(456),
-		PageNumber:     domain.PageNumber(789),
+var (
+	message = testMessage{
+		field: "test",
 	}
 )
 
-func TestSendAndReceiveDocumentMessage(t *testing.T) {
+func TestSendAndReceiveMessage(t *testing.T) {
 	tubeMail := NewTubeMailChannelImpl()
-	correctMailbox := make(chan domain.DocumentMessage)
-	wrongMailbox := make(chan domain.DocumentMessage)
+	correctMailbox := make(chan interface{})
+	wrongMailbox := make(chan interface{})
 
-	_ = tubeMail.RegisterDocumentMessageReceiver(testMailBox, forwardDocumentMessageToChannel(correctMailbox))
-	_ = tubeMail.RegisterDocumentMessageReceiver(wrongMailBox, forwardDocumentMessageToChannel(wrongMailbox))
+	_ = tubeMail.RegisterReceiver(testMailBox, messageToChannelForwander(correctMailbox))
+	_ = tubeMail.RegisterReceiver(wrongMailBox, messageToChannelForwander(wrongMailbox))
 
-	_ = tubeMail.SendDocumentMessage(testMailBox, testDocumentMessage)
+	_ = tubeMail.SendMessage(testMailBox, message)
 
-	assertReceiveDocumentMessage(t, correctMailbox, testDocumentMessage)
-	assertNoDocumentMessageReceived(t, wrongMailbox)
+	assertDocumentMessageReceived(t, correctMailbox, message)
+	assertNoMessageReceived(t, wrongMailbox)
 }
 
-func TestSendAndReceiveDocumentPageMessage(t *testing.T) {
-	tubeMail := NewTubeMailChannelImpl()
-	correctMailbox := make(chan domain.DocumentPageMessage)
-	wrongMailbox := make(chan domain.DocumentPageMessage)
-
-	_ = tubeMail.RegisterDocumentPageMessageReceiver(testMailBox, forwardDocumentPageMessageToChannel(correctMailbox))
-	_ = tubeMail.RegisterDocumentPageMessageReceiver(wrongMailBox, forwardDocumentPageMessageToChannel(wrongMailbox))
-
-	_ = tubeMail.SendDocumentPageMessage(testMailBox, testDocumentPageMessage)
-
-	assertReceiveDocumentPageMessage(t, correctMailbox, testDocumentPageMessage)
-	assertNoDocumentPageMessageReceived(t, wrongMailbox)
-}
-
-func forwardDocumentMessageToChannel(channel chan domain.DocumentMessage) domain.DocumentMessageReceiver {
-	return func(m domain.DocumentMessage) error {
+func messageToChannelForwander(channel chan interface{}) domain.TubeMailReceiver {
+	return func(m interface{}) error {
 		channel <- m
 		return nil
 	}
 }
 
-func forwardDocumentPageMessageToChannel(channel chan domain.DocumentPageMessage) domain.DocumentPageMessageReceiver {
-	return func(m domain.DocumentPageMessage) error {
-		channel <- m
-		return nil
-	}
-}
-
-func assertReceiveDocumentMessage(t *testing.T, channel chan domain.DocumentMessage, expectedMessage domain.DocumentMessage) {
+func assertDocumentMessageReceived(
+	t *testing.T,
+	channel chan interface{},
+	expectedMessage interface{},
+) {
 	select {
 	case message := <-channel:
 		assert.Equal(t, expectedMessage, message)
@@ -77,25 +59,7 @@ func assertReceiveDocumentMessage(t *testing.T, channel chan domain.DocumentMess
 	}
 }
 
-func assertReceiveDocumentPageMessage(t *testing.T, channel chan domain.DocumentPageMessage, expectedMessage domain.DocumentPageMessage) {
-	select {
-	case message := <-channel:
-		assert.Equal(t, expectedMessage, message)
-	case <-time.After(receiveTimeout):
-		t.Fatal("Did not receive the expected message within timeout")
-	}
-}
-
-func assertNoDocumentMessageReceived(t *testing.T, channel chan domain.DocumentMessage) {
-	select {
-	case <-channel:
-		t.Fatal("Did receive message unexpectedly within timeout")
-	case <-time.After(receiveTimeout):
-		break
-	}
-}
-
-func assertNoDocumentPageMessageReceived(t *testing.T, channel chan domain.DocumentPageMessage) {
+func assertNoMessageReceived(t *testing.T, channel chan interface{}) {
 	select {
 	case <-channel:
 		t.Fatal("Did receive message unexpectedly within timeout")
