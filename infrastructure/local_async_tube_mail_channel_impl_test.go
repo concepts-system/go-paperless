@@ -26,7 +26,7 @@ var (
 )
 
 func TestSendAndReceiveMessage(t *testing.T) {
-	tubeMail := NewTubeMailChannelImpl()
+	tubeMail := NewLocalAsyncTubeMailImpl()
 	correctMailbox := make(chan interface{})
 	wrongMailbox := make(chan interface{})
 

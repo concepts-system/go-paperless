@@ -12,8 +12,8 @@ type localAsyncTubeMailImpl struct {
 	receivers  receivers
 }
 
-// NewTubeMailChannelImpl creates a new tube mail implementation using local channels.
-func NewTubeMailChannelImpl() domain.TubeMail {
+// NewLocalAsyncTubeMailImpl creates a new tube mail implementation using local channels.
+func NewLocalAsyncTubeMailImpl() domain.TubeMail {
 	return &localAsyncTubeMailImpl{
 		bufferSize: 128,
 		receivers:  make(receivers),
