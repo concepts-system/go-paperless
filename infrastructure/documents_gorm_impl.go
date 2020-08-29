@@ -97,6 +97,86 @@ func (d documentsGormImpl) GetByDocumentNumber(documentNumber domain.DocumentNum
 }
 
 func (d documentsGormImpl) Add(document *domain.Document) (*domain.Document, error) {
+	owner, err := d.getDocumentOwner(document)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to create document")
+	}
+
+	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
+	if err := d.db.Create(documentModel).Scan(documentModel).Error; err != nil {
+		return nil, errors.Wrap(err, "Failed to create document")
+	}
+
+	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
+}
+
+func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, error) {
+	_, err := d.getDocumentModelByDocumentNumber(uint(document.DocumentNumber))
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"Document with number '%d' does not exist",
+			document.DocumentNumber,
+		)
+	}
+
+	owner, err := d.getDocumentOwner(document)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to update document")
+	}
+
+	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
+	if err := d.db.Update(documentModel).Scan(documentModel).Error; err != nil {
+		return nil, errors.Wrap(err, "Failed to update document")
+	}
+
+	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
+}
+
+func (d documentsGormImpl) GetDocumentPageByDocumentNumberAndPageNumber(
+	documentNumber domain.DocumentNumber,
+	pageNumber domain.PageNumber,
+) (*domain.DocumentPage, error) {
+	page, err := d.getDocumentPageModelByDocumentNumberAndPageNumber(
+		uint(documentNumber),
+		uint(pageNumber),
+	)
+
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return d.mapper.MapPageModelToDomainEntity(page), nil
+}
+
+func (d documentsGormImpl) UpdateDocumentPage(
+	documentNumber domain.DocumentNumber,
+	page *domain.DocumentPage,
+) (*domain.DocumentPage, error) {
+	document, err := d.getDocumentModelByDocumentNumber(uint(documentNumber))
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"Document with number '%d' does not exist",
+			documentNumber,
+		)
+	}
+
+	pageModel := d.mapper.MapDomainEntityToPageModel(document.DocumentNumber, page)
+	if err := d.db.Update(pageModel).Scan(pageModel).Error; err != nil {
+		return nil, errors.Wrap(err, "Failed to update page")
+	}
+
+	return d.mapper.MapPageModelToDomainEntity(pageModel), nil
+}
+
+/* Helper Methods */
+
+func (d *documentsGormImpl) getDocumentOwner(document *domain.Document) (*userModel, error) {
 	var owner userModel
 	err := d.db.
 		Select("id").
@@ -108,12 +188,7 @@ func (d documentsGormImpl) Add(document *domain.Document) (*domain.Document, err
 		return nil, errors.Wrapf(err, "Failed to find user with username '%s'", string(document.Owner.Username))
 	}
 
-	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
-	if err := d.db.Create(documentModel).Scan(documentModel).Error; err != nil {
-		return nil, errors.Wrap(err, "Failed to create document")
-	}
-
-	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
+	return &owner, nil
 }
 
 func (d *documentsGormImpl) getDocumentModelByDocumentNumber(
@@ -131,9 +206,20 @@ func (d *documentsGormImpl) getDocumentModelByDocumentNumber(
 		return nil, err
 	}
 
+	return &document, nil
+}
+
+func (d *documentsGormImpl) getDocumentPageModelByDocumentNumberAndPageNumber(
+	documentNumber uint,
+	pageNumber uint,
+) (*documentPageModel, error) {
+	var documentPage documentPageModel
+
+	err := d.db.First(&documentPage, documentNumber, pageNumber).Error
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &document, nil
+	return &documentPage, nil
 }

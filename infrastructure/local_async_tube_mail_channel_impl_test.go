@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	receiveTimeout = 100 * time.Millisecond
+	receiveTimeout   = 1 * time.Microsecond
+	noReceiveTimeout = 100 * time.Millisecond
 
 	testMailBox  = domain.MailBox("mailbox")
 	wrongMailBox = domain.MailBox("wrong")
@@ -63,7 +64,7 @@ func assertNoMessageReceived(t *testing.T, channel chan interface{}) {
 	select {
 	case <-channel:
 		t.Fatal("Did receive message unexpectedly within timeout")
-	case <-time.After(receiveTimeout):
+	case <-time.After(noReceiveTimeout):
 		break
 	}
 }

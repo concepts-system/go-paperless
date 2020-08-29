@@ -55,7 +55,7 @@ func (m *documentsGormMapper) MapDomainEntityToDocumentModel(ownerID uint, docum
 		return nil
 	}
 
-	model := &documentModel{
+	return &documentModel{
 		DocumentNumber: uint(document.DocumentNumber),
 		OwnerID:        ownerID,
 		Title:          string(document.Title),
@@ -64,8 +64,24 @@ func (m *documentsGormMapper) MapDomainEntityToDocumentModel(ownerID uint, docum
 		Fingerprint:    string(document.Fingerprint),
 		Type:           string(document.Type),
 	}
+}
 
-	return model
+func (m *documentsGormMapper) MapDomainEntityToPageModel(
+	documentID uint,
+	page *domain.DocumentPage,
+) *documentPageModel {
+	if page == nil {
+		return nil
+	}
+
+	return &documentPageModel{
+		DocumentNumber: documentID,
+		PageNumber:     uint(page.PageNumber),
+		State:          string(page.State),
+		Type:           string(page.Type),
+		Fingerprint:    string(page.Fingerprint),
+		Content:        string(page.Content),
+	}
 }
 
 // MapPageModelToDomainEntity maps the given page model to the corresponding domain entity.

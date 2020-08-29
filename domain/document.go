@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 type (
 	// DocumentType represents the type of a document.
@@ -18,24 +22,24 @@ type (
 
 const (
 	// DocumentTypePDF represents the type of documents having a PDF as artifact.
-	DocumentTypePDF DocumentType = "PDF"
+	DocumentTypePDF DocumentType = DocumentType("PDF")
 )
 
 const (
 	// DocumentStateEdited marks a document edited.
 	// A document in this state has edited pages but is not ready for
 	// further processing, as not all pages have been processed.
-	DocumentStateEdited = "EDITED"
+	DocumentStateEdited = DocumentState("EDITED")
 
 	// DocumentStateDirty marks a document processed, meaning all pages are
 	// processed so that the document is ready for further processing.
-	DocumentStateDirty = "PROCESSED"
+	DocumentStateDirty = DocumentState("PROCESSED")
 
 	// DocumentStateIndexed marks a document as indexed.
-	DocumentStateIndexed = "INDEXED"
+	DocumentStateIndexed = DocumentState("INDEXED")
 
 	// DocumentStateArchived marks a document as archived (in sync).
-	DocumentStateArchived = "ARCHIVED"
+	DocumentStateArchived = DocumentState("ARCHIVED")
 )
 
 // Document represents a document managed by the system.
@@ -50,8 +54,17 @@ type Document struct {
 	Pages          []DocumentPage
 }
 
+// ContentKey returns the content key for the document.
+func (d Document) ContentKey() ContentKey {
+	return ContentKey(fmt.Sprintf(
+		"%s.%s",
+		d.Fingerprint,
+		strings.ToLower(string(d.Type)),
+	))
+}
+
 // AreAllPagesInState returns a boolean value indicating whether all the
-// given documents pages are in the given page state.
+// document's pages are in the given page state.
 func (d Document) AreAllPagesInState(state PageState) bool {
 	for _, page := range d.Pages {
 		if page.State != state {
