@@ -31,9 +31,9 @@ const (
 	// further processing, as not all pages have been processed.
 	DocumentStateEdited = DocumentState("EDITED")
 
-	// DocumentStateDirty marks a document processed, meaning all pages are
+	// DocumentStateProcessed marks a document processed, meaning all pages are
 	// processed so that the document is ready for further processing.
-	DocumentStateDirty = DocumentState("PROCESSED")
+	DocumentStateProcessed = DocumentState("PROCESSED")
 
 	// DocumentStateIndexed marks a document as indexed.
 	DocumentStateIndexed = DocumentState("INDEXED")

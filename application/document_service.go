@@ -1,8 +1,21 @@
 package application
 
 import (
+	"mime/multipart"
+	"regexp"
+
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
+	"github.com/google/uuid"
+)
+
+const (
+	mimeHeaderKeyContentType = "Content-Type"
+)
+
+var (
+	validContentTypes   = regexp.MustCompile("^image/(bmp|gif|jpeg|png|tiff)$")
+	validHighlightTypes = regexp.MustCompile("^html$")
 )
 
 // DocumentService defines an application service for managing document-related
@@ -17,12 +30,16 @@ type DocumentService interface {
 
 	// CreateNewDocument creates the given new document owned by the user with the given username.
 	CreateNewDocument(username string, document *domain.Document) (*domain.Document, error)
+
+	// AddPageToUserDocument adds the given pages to the document with the given ID.
+	AddPageToUserDocument(username string, documentNumber uint, file *multipart.FileHeader) (*domain.DocumentPage, error)
 }
 
 type documentServiceImpl struct {
-	users           domain.Users
-	documents       domain.Documents
-	documentArchive domain.DocumentArchive
+	users            domain.Users
+	documents        domain.Documents
+	documentArchive  domain.DocumentArchive
+	documentRegistry domain.DocumentRegistry
 }
 
 // NewDocumentService creates a new document service.
@@ -55,13 +72,8 @@ func (s *documentServiceImpl) GetUserDocumentByDocumentNumber(
 	username string,
 	documentNumber uint,
 ) (*domain.Document, error) {
-	document, err := s.expectDocumentWithDocumentNumberExists(domain.DocumentNumber(documentNumber))
-
+	document, err := s.expectUserDocumentExists(domain.Name(username), domain.DocumentNumber(documentNumber))
 	if err != nil {
-		return nil, err
-	}
-
-	if err := s.expectUserMayAccessDocument(domain.Name(username), document); err != nil {
 		return nil, err
 	}
 
@@ -88,13 +100,77 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 	return newDocument, nil
 }
 
+func (s *documentServiceImpl) AddPageToUserDocument(
+	username string,
+	documentNumber uint,
+	file *multipart.FileHeader,
+) (*domain.DocumentPage, error) {
+	document, err := s.expectUserDocumentExists(
+		domain.Name(username),
+		domain.DocumentNumber(documentNumber),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pageType, err := s.validatePageType(file)
+	if err != nil {
+		return nil, err
+	}
+
+	fileContent, err := file.Open()
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to process file")
+	}
+
+	page := &domain.DocumentPage{
+		PageNumber:  domain.PageNumber(len(document.Pages)),
+		State:       domain.PageStateEdited,
+		Type:        pageType,
+		Fingerprint: domain.Fingerprint(uuid.New().String()),
+	}
+
+	err = s.documentArchive.StoreContent(
+		domain.DocumentNumber(documentNumber),
+		page.ContentKey(),
+		fileContent,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	document.State = domain.DocumentStateEdited
+	if _, err := s.documents.Update(document); err != nil {
+		return nil, err
+	}
+
+	page, err = s.documents.UpdatePage(domain.DocumentNumber(documentNumber), page)
+	if err != nil {
+		return nil, err
+	}
+
+	s.documentRegistry.Review(domain.DocumentNumber(documentNumber))
+
+	return page, nil
+}
+
 /* Helper Methods */
 
-func (s *documentServiceImpl) userMayAccessDocument(
-	username string,
-	document *domain.Document,
-) (bool, error) {
-	return document.Owner.Username == domain.Name(username), nil
+func (s *documentServiceImpl) expectUserDocumentExists(
+	username domain.Name,
+	documentNumber domain.DocumentNumber,
+) (*domain.Document, error) {
+	document, err := s.expectDocumentWithDocumentNumberExists(documentNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.expectUserMayAccessDocument(username, document); err != nil {
+		return nil, err
+	}
+
+	return document, nil
 }
 
 func (s *documentServiceImpl) expectDocumentWithDocumentNumberExists(
@@ -123,4 +199,24 @@ func (s *documentServiceImpl) expectUserMayAccessDocument(username domain.Name, 
 	}
 
 	return nil
+}
+
+func (s *documentServiceImpl) userMayAccessDocument(
+	username string,
+	document *domain.Document,
+) (bool, error) {
+	return document.Owner.Username == domain.Name(username), nil
+}
+
+func (s *documentServiceImpl) validatePageType(file *multipart.FileHeader) (domain.PageType, error) {
+	if file == nil {
+		return domain.PageTypeUnknown, errors.New("file may not be null")
+	}
+
+	contentType := file.Header.Get(mimeHeaderKeyContentType)
+	if !validHighlightTypes.MatchString(contentType) {
+		return domain.PageTypeUnknown, BadRequestError.Newf("Page type '%s' is not supported", contentType)
+	}
+
+	return domain.PageTypeUnknown, nil
 }

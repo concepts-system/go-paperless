@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type receivers = map[domain.MailBox][]domain.TubeMailReceiver
+type receivers = map[domain.Mailbox][]domain.TubeMailReceiver
 
 type localAsyncTubeMailImpl struct {
 	bufferSize int
@@ -21,7 +21,7 @@ func NewLocalAsyncTubeMailImpl() domain.TubeMail {
 }
 
 func (t *localAsyncTubeMailImpl) RegisterReceiver(
-	mailBox domain.MailBox,
+	mailBox domain.Mailbox,
 	receiver domain.TubeMailReceiver,
 ) error {
 	if _, ok := t.receivers[mailBox]; !ok {
@@ -34,8 +34,8 @@ func (t *localAsyncTubeMailImpl) RegisterReceiver(
 }
 
 func (t *localAsyncTubeMailImpl) SendMessage(
-	target domain.MailBox,
-	message interface{},
+	target domain.Mailbox,
+	message ...interface{},
 ) error {
 	receivers, ok := t.receivers[target]
 
@@ -45,19 +45,19 @@ func (t *localAsyncTubeMailImpl) SendMessage(
 	}
 
 	for _, receiver := range receivers {
-		go t.sendMessage(message, receiver)
+		go t.sendMessage(receiver, message...)
 	}
 
 	return nil
 }
 
 func (t *localAsyncTubeMailImpl) sendMessage(
-	message interface{},
 	receiver domain.TubeMailReceiver,
+	message ...interface{},
 ) {
-	err := receiver(message)
+	err := receiver(message...)
 
 	if err != nil {
-		log.Errorf("Error while handling document message: %s", err.Error())
+		log.Errorf("Error while handling message: %s", err.Error())
 	}
 }

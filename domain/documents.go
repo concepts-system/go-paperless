@@ -20,14 +20,21 @@ type Documents interface {
 	// GetDocumentPageByDocumentNumberAndPageNumber returns the given document
 	// page with the given page number, part of the document with the given
 	// document number.
-	GetDocumentPageByDocumentNumberAndPageNumber(
+	GetPageByDocumentNumberAndPageNumber(
 		documentNumber DocumentNumber,
 		pageNumber PageNumber,
 	) (*DocumentPage, error)
 
-	// UpdateDocumentPage saves the given document page associated to the given
+	// AddPage adds the given page to the document with the given document
+	// number.
+	AddPage(
+		document DocumentNumber,
+		page *DocumentPage,
+	) (*DocumentPage, error)
+
+	// UpdatePage saves the given document page associated to the given
 	// document.
-	UpdateDocumentPage(
+	UpdatePage(
 		documentNumber DocumentNumber,
 		page *DocumentPage,
 	) (*DocumentPage, error)

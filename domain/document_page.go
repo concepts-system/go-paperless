@@ -19,6 +19,8 @@ type (
 const (
 	// PageTypeTIFF
 	PageTypeTIFF = PageType("TIFF")
+	// PageTypeUnknown
+	PageTypeUnknown = PageType("UNKNOWN")
 )
 
 const (

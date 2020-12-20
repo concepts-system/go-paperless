@@ -113,11 +113,7 @@ func (d documentsGormImpl) Add(document *domain.Document) (*domain.Document, err
 func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, error) {
 	_, err := d.getDocumentModelByDocumentNumber(uint(document.DocumentNumber))
 	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"Document with number '%d' does not exist",
-			document.DocumentNumber,
-		)
+		return nil, err
 	}
 
 	owner, err := d.getDocumentOwner(document)
@@ -133,7 +129,7 @@ func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, 
 	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
 }
 
-func (d documentsGormImpl) GetDocumentPageByDocumentNumberAndPageNumber(
+func (d documentsGormImpl) GetPageByDocumentNumberAndPageNumber(
 	documentNumber domain.DocumentNumber,
 	pageNumber domain.PageNumber,
 ) (*domain.DocumentPage, error) {
@@ -153,17 +149,30 @@ func (d documentsGormImpl) GetDocumentPageByDocumentNumberAndPageNumber(
 	return d.mapper.MapPageModelToDomainEntity(page), nil
 }
 
-func (d documentsGormImpl) UpdateDocumentPage(
+func (d documentsGormImpl) AddPage(
 	documentNumber domain.DocumentNumber,
 	page *domain.DocumentPage,
 ) (*domain.DocumentPage, error) {
 	document, err := d.getDocumentModelByDocumentNumber(uint(documentNumber))
 	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"Document with number '%d' does not exist",
-			documentNumber,
-		)
+		return nil, errors.Wrap(err, "Failed to create page")
+	}
+
+	pageModel := d.mapper.MapDomainEntityToPageModel(document.DocumentNumber, page)
+	if err := d.db.Create(pageModel).Scan(pageModel).Error; err != nil {
+		return nil, errors.Wrap(err, "Failed to create page")
+	}
+
+	return d.mapper.MapPageModelToDomainEntity(pageModel), nil
+}
+
+func (d documentsGormImpl) UpdatePage(
+	documentNumber domain.DocumentNumber,
+	page *domain.DocumentPage,
+) (*domain.DocumentPage, error) {
+	document, err := d.getDocumentModelByDocumentNumber(uint(documentNumber))
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to update page")
 	}
 
 	pageModel := d.mapper.MapDomainEntityToPageModel(document.DocumentNumber, page)

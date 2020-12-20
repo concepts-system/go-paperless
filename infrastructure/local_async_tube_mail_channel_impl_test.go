@@ -12,8 +12,8 @@ const (
 	receiveTimeout   = 1 * time.Microsecond
 	noReceiveTimeout = 100 * time.Millisecond
 
-	testMailBox  = domain.MailBox("mailbox")
-	wrongMailBox = domain.MailBox("wrong")
+	testMailBox  = domain.Mailbox("mailbox")
+	wrongMailBox = domain.Mailbox("wrong")
 )
 
 type testMessage struct {
@@ -41,8 +41,8 @@ func TestSendAndReceiveMessage(t *testing.T) {
 }
 
 func messageToChannelForwander(channel chan interface{}) domain.TubeMailReceiver {
-	return func(m interface{}) error {
-		channel <- m
+	return func(m ...interface{}) error {
+		channel <- m[0]
 		return nil
 	}
 }

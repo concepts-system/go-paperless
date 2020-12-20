@@ -25,7 +25,7 @@ func (p *documentPreprocessorImpl) PreprocessPage(
 	documentNumber domain.DocumentNumber,
 	pageNumber domain.PageNumber,
 ) error {
-	page, err := p.documents.GetDocumentPageByDocumentNumberAndPageNumber(
+	page, err := p.documents.GetPageByDocumentNumberAndPageNumber(
 		documentNumber,
 		pageNumber,
 	)

@@ -8,6 +8,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const (
+	pagesFormKey = "pages[]"
+)
+
 type documentRouter struct {
 	documentService application.DocumentService
 }
@@ -23,6 +27,7 @@ func NewDocumentRouter(documentService application.DocumentService) Router {
 // DefineRoutes defines the routes for document management.
 func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	apiGroup := group.Group("/api", auth.RequireScope(application.TokenScopeAPI))
+
 	documentGroup := apiGroup.Group("/documents", auth.RequireAuthentication())
 	documentGroup.GET("", r.getDocuments)
 	// documentGroup.GET("/search", searchDocuments)
@@ -30,16 +35,16 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	documentGroup.GET("/:id", r.getDocument)
 	// documentGroup.PUT("/:id", updateDocument)
 	// // documentGroup.DELETE("/:id", deleteDocument)
-	// documentGroup.GET("/:id/raw", getDocumentContent)
+	// documentGroup.GET("/:id/content", getDocumentContent)
 
-	// pageGroup := documentGroup.Group("/:id/pages")
+	pageGroup := documentGroup.Group("/:id/pages")
 	// pageGroup.GET("", getDocumentPages)
-	// pageGroup.POST("/raw", addPagesToDocument)
+	pageGroup.POST("/content", r.addPageToDocument)
 	// pageGroup.GET("/:pageNumber", getDocumentPage)
 	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
 	// // pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
-	// // pageGroup.GET("/:pageNumber/raw", getPageContent)
-	// // pageGroup.PUT("/:pageNumber/raw", updatePageContent)
+	// // pageGroup.GET("/:pageNumber/content", getPageContent)
+	// // pageGroup.PUT("/:pageNumber/content", updatePageContent)
 }
 
 /* Handlers */
@@ -80,18 +85,44 @@ func (r *documentRouter) createDocument(ec echo.Context) error {
 
 func (r *documentRouter) getDocument(ec echo.Context) error {
 	c, _ := ec.(*context)
-	documentnumber, err := r.bindDocumentNumber(ec)
+	documentNumber, err := r.bindDocumentNumber(ec)
 	if err != nil {
 		return err
 	}
 
-	document, err := r.documentService.GetUserDocumentByDocumentNumber(*c.Username, documentnumber)
+	document, err := r.documentService.GetUserDocumentByDocumentNumber(*c.Username, documentNumber)
 	if err != nil {
 		return err
 	}
 
 	serializer := documentSerializer{c, document}
 	return c.JSON(http.StatusOK, serializer.Response())
+}
+
+func (r *documentRouter) addPageToDocument(ec echo.Context) error {
+	c, _ := ec.(*context)
+	documentNumber, err := r.bindDocumentNumber(c)
+	if err != nil {
+		return err
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return application.BadRequestError.Newf("Expecting valid multipart form with '%s' containing at least one file", pagesFormKey)
+	}
+
+	files := form.File[pagesFormKey]
+	if len(files) != 1 {
+		return application.BadRequestError.Newf("Expecting '%s' to contain at exactly one file", pagesFormKey)
+	}
+
+	page, err := r.documentService.AddPageToUserDocument(*c.Username, documentNumber, files[0])
+	if err != nil {
+		return err
+	}
+
+	serializer := documentPageSerializer{c, page}
+	return c.JSON(http.StatusCreated, serializer)
 }
 
 /* Helper Methods */

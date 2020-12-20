@@ -38,10 +38,17 @@ build:
 	go build -o $(BINARY_NAME) main.go
 
 build-docker:
-	GOOS=linux GOARCH=amd64 go build -ldflags "-X 'main.release=true' -X 'main.buildDate=$(BUILD_DATE)' -X 'main.version=$(VERSION)'" -o $(BINARY_NAME) main.go
+	GOOS=linux \
+	GOARCH=amd64 \
+	go build \
+		-ldflags "-X 'main.release=true' -X 'main.buildDate=$(BUILD_DATE)' -X 'main.version=$(VERSION)'" \
+		-o $(BINARY_NAME) main.go
+	docker build -t "$(VERSION)" -t "latest"
 
 build-release:
-	go build -ldflags "-X 'main.release=true' -X 'main.buildDate=$(BUILD_DATE)' -X 'main.version=$(VERSION)'" -o $(BINARY_NAME) main.go
+	go build \
+		-ldflags "-X 'main.release=true' -X 'main.buildDate=$(BUILD_DATE)' -X 'main.version=$(VERSION)'" \
+		-o $(BINARY_NAME) main.go
 
 release:
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)" || true
