@@ -4,7 +4,7 @@ package documents
 // 	"fmt"
 // 	"time"
 
-// 	"github.com/jinzhu/gorm"
+// 	"gorm.io/gorm"
 
 // 	"github.com/concepts-system/go-paperless/common"
 // 	"github.com/concepts-system/go-paperless/database"

@@ -3,12 +3,15 @@ package infrastructure
 import (
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/errors"
+	gorm_logrus "github.com/onrik/gorm-logrus"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-// Database defines a struct holding all required infromation for accessing
+// Database defines a struct holding all required information for accessing
 // the database.
 type Database struct {
 	*gorm.DB
@@ -29,17 +32,26 @@ func NewDatabase(config *config.Configuration) *Database {
 // Connect tries to establish a connection to the configured database.
 func (db *Database) Connect() error {
 	var err error
+
+	var dialector gorm.Dialector
+	switch db.config.Database.Type {
+	case "sqlite3":
+		dialector = sqlite.Open(db.config.Database.URL)
+	case "postgres":
+		dialector = postgres.Open(db.config.Database.URL)
+	default:
+		log.Fatalf("Unknown database type '%s'", db.config.Database.Type)
+	}
+
 	db.DB, err = gorm.Open(
-		db.config.Database.Type,
-		db.config.Database.URL,
+		dialector,
+		&gorm.Config{
+			Logger: gorm_logrus.New(),
+		},
 	)
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to connect to database")
-	}
-
-	if !db.config.IsProductionMode() {
-		db.DB.LogMode(true)
 	}
 
 	return nil

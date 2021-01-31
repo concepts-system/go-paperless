@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/concepts-system/go-paperless/domain"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type usersGormImpl struct {
@@ -41,7 +41,7 @@ func (u usersGormImpl) GetByUsername(username domain.Name) (*domain.User, error)
 	user, err := u.getUserModelByUsername(string(username))
 
 	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
+		if gorm.ErrRecordNotFound == err {
 			return nil, nil
 		}
 

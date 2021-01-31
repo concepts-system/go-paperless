@@ -11,13 +11,13 @@ type (
 	Fingerprint string
 
 	// PageOffset represents the type for a page offset.
-	PageOffset uint
+	PageOffset = int
 
 	// PageSize represents the type for a page size.
-	PageSize uint
+	PageSize = int
 )
 
-// PageRequest defines a struct for declaring pagin information for requests.
+// PageRequest defines a struct for declaring paging information for requests.
 type PageRequest struct {
 	Offset PageOffset
 	Size   PageSize

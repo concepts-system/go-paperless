@@ -17,9 +17,9 @@ type errorResponse struct {
 	Details    interface{} `json:"details,omitempty"`
 }
 
-func newErrorResponse(stausCode int, err error) errorResponse {
+func newErrorResponse(statusCode int, err error) errorResponse {
 	resp := errorResponse{
-		StatusCode: stausCode,
+		StatusCode: statusCode,
 		Title:      err.Error(),
 	}
 

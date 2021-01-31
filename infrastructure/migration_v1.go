@@ -1,25 +1,25 @@
 package infrastructure
 
 import (
-	"github.com/jinzhu/gorm"
-	gormigrate "gopkg.in/gormigrate.v1"
+	gormigrate "github.com/go-gormigrate/gormigrate/v2"
+	"gorm.io/gorm"
 )
 
 var migrationV1 = gormigrate.Migration{
 	ID: "1",
 	Migrate: func(tx *gorm.DB) error {
 		// Users
-		if err := tx.AutoMigrate(&userModel{}).Error; err != nil {
+		if err := tx.AutoMigrate(&userModel{}); err != nil {
 			return err
 		}
 
 		// Documents
-		if err := tx.AutoMigrate(&documentModel{}).Error; err != nil {
+		if err := tx.AutoMigrate(&documentModel{}); err != nil {
 			return err
 		}
 
 		// Document Pages
-		if err := tx.AutoMigrate(&documentPageModel{}).Error; err != nil {
+		if err := tx.AutoMigrate(&documentPageModel{}); err != nil {
 			return err
 		}
 
@@ -28,17 +28,17 @@ var migrationV1 = gormigrate.Migration{
 
 	Rollback: func(tx *gorm.DB) error {
 		// Document Pages
-		if err := tx.DropTable(documentPageModel{}.TableName()).Error; err != nil {
+		if err := tx.Migrator().DropTable(documentPageModel{}.TableName()); err != nil {
 			return err
 		}
 
 		// Documents
-		if err := tx.DropTable(documentModel{}.TableName()).Error; err != nil {
+		if err := tx.Migrator().DropTable(documentModel{}.TableName()); err != nil {
 			return err
 		}
 
 		// Users
-		if err := tx.DropTable(userModel{}.TableName()).Error; err != nil {
+		if err := tx.Migrator().DropTable(userModel{}.TableName()); err != nil {
 			return err
 		}
 

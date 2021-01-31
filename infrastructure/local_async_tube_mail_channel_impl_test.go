@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	receiveTimeout   = 1 * time.Microsecond
-	noReceiveTimeout = 100 * time.Millisecond
+	receiveTimeout   = 1 * time.Millisecond
+	noReceiveTimeout = 1 * time.Second
 
 	testMailBox  = domain.Mailbox("mailbox")
 	wrongMailBox = domain.Mailbox("wrong")

@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
@@ -86,7 +86,7 @@ func (d documentsGormImpl) GetByDocumentNumber(documentNumber domain.DocumentNum
 	document, err := d.getDocumentModelByDocumentNumber(uint(documentNumber))
 
 	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
+		if gorm.ErrRecordNotFound == err {
 			return nil, nil
 		}
 
@@ -122,7 +122,7 @@ func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, 
 	}
 
 	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
-	if err := d.db.Update(documentModel).Scan(documentModel).Error; err != nil {
+	if err := d.db.Save(documentModel).Scan(documentModel).Error; err != nil {
 		return nil, errors.Wrap(err, "Failed to update document")
 	}
 
@@ -139,7 +139,7 @@ func (d documentsGormImpl) GetPageByDocumentNumberAndPageNumber(
 	)
 
 	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
+		if gorm.ErrRecordNotFound == err {
 			return nil, nil
 		}
 
@@ -176,7 +176,7 @@ func (d documentsGormImpl) UpdatePage(
 	}
 
 	pageModel := d.mapper.MapDomainEntityToPageModel(document.DocumentNumber, page)
-	if err := d.db.Update(pageModel).Scan(pageModel).Error; err != nil {
+	if err := d.db.Save(pageModel).Scan(pageModel).Error; err != nil {
 		return nil, errors.Wrap(err, "Failed to update page")
 	}
 

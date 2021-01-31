@@ -26,7 +26,7 @@ func NewServer(
 	config *config.Configuration,
 	authService application.AuthService,
 ) *Server {
-	log.Info("Initializing server...")
+	log.WithField("component", "server").Info("Initializing server...")
 
 	server := Server{
 		echo:   echo.New(),

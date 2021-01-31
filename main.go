@@ -7,15 +7,11 @@ import (
 	"time"
 
 	"github.com/concepts-system/go-paperless/domain"
+	"github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/infrastructure"
 
 	"github.com/concepts-system/go-paperless/application"
-
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/config"
 	"github.com/concepts-system/go-paperless/web"
@@ -30,6 +26,8 @@ var (
 const (
 	documentsDirectory = "documents"
 )
+
+var log = logrus.WithField("component", "main")
 
 type bootstrapper struct {
 	config   *config.Configuration
@@ -65,7 +63,13 @@ func main() {
 	log.Infof("Starting application %s (%s)", version, buildDate)
 
 	prepareDatabase(bs)
-	defer bs.database.Close()
+	db, err := bs.database.DB.DB()
+
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	defer db.Close()
 
 	setupDependencies(bs)
 	initializeServer(bs)
@@ -97,7 +101,7 @@ func prepareDatabase(bs *bootstrapper) {
 		// Migrate to most recent version by default.
 		// Use 'bs.database.MigrateTo(version)' to migrate to a specific version.
 		if err := bs.database.Migrate(); err != nil {
-			log.Fatalf("Error while migrating database: %v", err)
+			log.Fatalf("Failed to migrate database: %v", err)
 		}
 	}
 }
@@ -163,7 +167,7 @@ func initializeDocumentArchive(bs *bootstrapper) {
 	)
 
 	if err != nil {
-		log.Fatalf("Failed to initialize document archive: %s", err.Error())
+		log.Fatalf("Failed to initialize document archive: %v", err)
 	}
 
 	bs.documentArchive = documentArchive
@@ -182,7 +186,7 @@ func ensureUserExists(bs *bootstrapper) {
 	_, count, err := bs.userService.GetUsers(domain.PageRequest{Offset: 0, Size: 1})
 
 	if err != nil {
-		log.Fatalf("Error while checking for default user: %v", err)
+		log.Fatalf("Failed checking for default user: %v", err)
 		panic(err)
 	}
 
@@ -202,6 +206,6 @@ func ensureUserExists(bs *bootstrapper) {
 	_, err = bs.userService.CreateNewUser(defaultUser, "admin")
 
 	if err != nil {
-		log.Fatalf("Error while creating default user: %v", err)
+		log.Fatal("Failed to create default user", err)
 	}
 }

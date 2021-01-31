@@ -9,7 +9,7 @@ type Mailbox string
 // TubeMail defines an interface for a tube mail system used for sending things
 // around.
 type TubeMail interface {
-	// RegisterReceiver registeres a new document receiver for a given mail box.
+	// RegisterReceiver registers a new document receiver for a given mail box.
 	RegisterReceiver(mailBox Mailbox, receiver TubeMailReceiver) error
 
 	// SendMessage sends a message to a target mailbox.

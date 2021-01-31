@@ -3,7 +3,7 @@ package domain
 import (
 	"errors"
 
-	"github.com/labstack/gommon/log"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,6 +16,9 @@ const (
 type DocumentRegistry interface {
 	Review(documentNumber DocumentNumber)
 }
+
+// Receiver defines the signature of an abstract tube mail receiver.
+type Receiver = func(...interface{}) error
 
 type documentRegistryImpl struct {
 	tubeMail     TubeMail
@@ -83,7 +86,7 @@ func (d documentRegistryImpl) analyzePage(
 	documentNumber DocumentNumber,
 	pageNumber PageNumber,
 ) error {
-
+	return nil
 }
 
 /* Helper Methods */
@@ -103,7 +106,7 @@ func (d documentRegistryImpl) registerDocumentReceiver(
 		}
 
 		log.Infof(
-			"Received message in '%s': document %s",
+			"Received message in '%v': document %v",
 			mailbox,
 			documentNumber,
 		)
@@ -111,7 +114,7 @@ func (d documentRegistryImpl) registerDocumentReceiver(
 		return handler(documentNumber)
 	}
 
-	d.tubeMail.RegisterReceiver(mailbox, receiver)
+	d.mustRegisterReceiver(mailbox, receiver)
 }
 
 func (d documentRegistryImpl) registerDocumentPageReceiver(
@@ -130,7 +133,7 @@ func (d documentRegistryImpl) registerDocumentPageReceiver(
 		}
 
 		log.Infof(
-			"Received message in '%s': document %s, page %s",
+			"Received message in '%v': document %v, page %v",
 			mailbox,
 			documentNumber,
 			pageNumber,
@@ -139,5 +142,11 @@ func (d documentRegistryImpl) registerDocumentPageReceiver(
 		return handler(documentNumber, pageNumber)
 	}
 
-	d.tubeMail.RegisterReceiver(mailbox, receiver)
+	d.mustRegisterReceiver(mailbox, receiver)
+}
+
+func (d documentRegistryImpl) mustRegisterReceiver(mailbox Mailbox, receiver Receiver) {
+	if err := d.tubeMail.RegisterReceiver(mailbox, receiver); err != nil {
+		log.Fatal("Failed to register receiver", err)
+	}
 }
