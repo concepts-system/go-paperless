@@ -15,7 +15,7 @@ type documentsGormImpl struct {
 }
 
 type documentModel struct {
-	DocumentNumber uint `gorm:"primary_key"`
+	DocumentNumber uint `gorm:"not_null;primary_key"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time `gorm:"index"`
@@ -24,7 +24,7 @@ type documentModel struct {
 	Title       string     `gorm:"not_null;size:255"`
 	Date        *time.Time `gorm:"index"`
 	State       string     `gorm:"not_null;size:32"`
-	Fingerprint string     `gorm:"size:255"`
+	Fingerprint string     `gorm:"size:255;index"`
 	Type        string     `gorm:"not_null;size:32"`
 
 	Owner *userModel
@@ -32,13 +32,15 @@ type documentModel struct {
 }
 
 type documentPageModel struct {
-	gorm.Model
-	DocumentNumber uint   `gorm:"not_null;unique_index:idx_document_page"`
-	PageNumber     uint   `gorm:"not_null;unique_index:idx_document_page"`
-	State          string `gorm:"not_null;size:32"`
-	Type           string `gorm:"not_null;size:32"`
-	Fingerprint    string `gorm:"not_null;size:32"`
-	Content        string `gorm:"size:8192"`
+	DocumentNumber uint `gorm:"not_null;primaryKey;autoIncrement:false"`
+	PageNumber     uint `gorm:"not_null;primaryKey;autoIncrement:false"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      *time.Time `gorm:"index"`
+	State          string     `gorm:"not_null;size:32"`
+	Type           string     `gorm:"not_null;size:32"`
+	Fingerprint    string     `gorm:"not_null;size:32"`
+	Text           string     `gorm:"size:8192"`
 }
 
 func (documentModel) TableName() string {
@@ -203,12 +205,14 @@ func (d *documentsGormImpl) getDocumentOwner(document *domain.Document) (*userMo
 func (d *documentsGormImpl) getDocumentModelByDocumentNumber(
 	documentNumber uint,
 ) (*documentModel, error) {
-	var document documentModel
+	document := documentModel{
+		DocumentNumber: documentNumber,
+	}
 
 	err := d.db.
 		Preload("Owner").
 		Preload("Pages").
-		First(&document, documentNumber).
+		First(&document).
 		Error
 
 	if err != nil {
@@ -222,9 +226,12 @@ func (d *documentsGormImpl) getDocumentPageModelByDocumentNumberAndPageNumber(
 	documentNumber uint,
 	pageNumber uint,
 ) (*documentPageModel, error) {
-	var documentPage documentPageModel
+	documentPage := documentPageModel{
+		DocumentNumber: documentNumber,
+		PageNumber:     pageNumber,
+	}
 
-	err := d.db.First(&documentPage, documentNumber, pageNumber).Error
+	err := d.db.First(&documentPage).Error
 
 	if err != nil {
 		return nil, err

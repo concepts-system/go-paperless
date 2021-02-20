@@ -34,9 +34,13 @@ type bootstrapper struct {
 	database *infrastructure.Database
 	server   *web.Server
 
-	users           domain.Users
-	documents       domain.Documents
-	documentArchive domain.DocumentArchive
+	tubeMail domain.TubeMail
+
+	users                domain.Users
+	documents            domain.Documents
+	documentPreprocessor domain.DocumentPreprocessor
+	documentArchive      domain.DocumentArchive
+	documentRegistry     domain.DocumentRegistry
 
 	authService     application.AuthService
 	userService     application.UserService
@@ -122,9 +126,17 @@ func createDirectories(bs *bootstrapper) {
 
 func setupDependencies(bs *bootstrapper) {
 	bs.tokenKeyResolver = application.ConfigTokenKeyResolver(bs.config)
+	bs.tubeMail = infrastructure.NewLocalAsyncTubeMailImpl()
 	bs.users = infrastructure.NewUsers(bs.database)
 	bs.documents = infrastructure.NewDocuments(bs.database)
 	initializeDocumentArchive(bs)
+	bs.documentPreprocessor = infrastructure.NewDocumentPreprocessorImpl(bs.documents, bs.documentArchive)
+
+	bs.documentRegistry = domain.NewDocumentRegistry(
+		bs.tubeMail,
+		bs.documents,
+		bs.documentPreprocessor,
+	)
 
 	bs.userService = application.NewUserService(bs.users)
 	bs.authService = application.NewAuthService(
@@ -137,6 +149,7 @@ func setupDependencies(bs *bootstrapper) {
 		bs.users,
 		bs.documents,
 		bs.documentArchive,
+		bs.documentRegistry,
 	)
 }
 

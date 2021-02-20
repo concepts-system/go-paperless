@@ -42,7 +42,41 @@ func NewDocumentRegistry(
 }
 
 func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
-	//
+	log.Debugf("Reviewing document %d", documentNumber)
+	document, err := d.documents.GetByDocumentNumber(documentNumber)
+	if err != nil {
+		log.Error(err)
+	}
+
+	switch document.State {
+	case DocumentStateEdited:
+		log.Debug("Document has been edited since last review; reviewing pages")
+		d.reviewDocumentPages(document)
+	case DocumentStateArchived:
+		log.Debug("Document is already archived; nothing to do")
+		return
+	default:
+		log.Errorf("Documents in state %s are not handled yet!", document.State)
+	}
+}
+
+func (d documentRegistryImpl) reviewDocumentPages(document *Document) {
+	for _, page := range document.Pages {
+		d.reviewDocumentPage(document.DocumentNumber, page)
+	}
+}
+
+func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, page DocumentPage) {
+	switch page.State {
+	case PageStateEdited:
+		log.Debug("Page has been modified; sending to preprocessing")
+		err := d.tubeMail.SendMessage(mailboxPagePreprocess, documentNumber, page.PageNumber)
+		if err != nil {
+			log.Error(err)
+		}
+	default:
+		log.Errorf("Document pages in state %s are not handled yet!", page.State)
+	}
 }
 
 func (d documentRegistryImpl) setupTubeMail() {
@@ -59,12 +93,7 @@ func (d documentRegistryImpl) preprocessPage(
 	documentNumber DocumentNumber,
 	pageNumber PageNumber,
 ) error {
-	_, err := d.documents.GetPageByDocumentNumberAndPageNumber(documentNumber, pageNumber)
-	if err != nil {
-		return err
-	}
-
-	if err = d.preprocessor.PreprocessPage(documentNumber, pageNumber); err != nil {
+	if err := d.preprocessor.PreprocessPage(documentNumber, pageNumber); err != nil {
 		return err
 	}
 

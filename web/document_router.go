@@ -122,7 +122,7 @@ func (r *documentRouter) addPageToDocument(ec echo.Context) error {
 	}
 
 	serializer := documentPageSerializer{c, page}
-	return c.JSON(http.StatusCreated, serializer)
+	return c.JSON(http.StatusCreated, serializer.Response())
 }
 
 /* Helper Methods */

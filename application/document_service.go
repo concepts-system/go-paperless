@@ -47,11 +47,13 @@ func NewDocumentService(
 	users domain.Users,
 	documents domain.Documents,
 	documentArchive domain.DocumentArchive,
+	documentRegistry domain.DocumentRegistry,
 ) DocumentService {
 	return &documentServiceImpl{
-		users:           users,
-		documents:       documents,
-		documentArchive: documentArchive,
+		users:            users,
+		documents:        documents,
+		documentArchive:  documentArchive,
+		documentRegistry: documentRegistry,
 	}
 }
 
@@ -124,7 +126,7 @@ func (s *documentServiceImpl) AddPageToUserDocument(
 	}
 
 	page := &domain.DocumentPage{
-		PageNumber:  domain.PageNumber(len(document.Pages)),
+		PageNumber:  domain.PageNumber(len(document.Pages) + 1),
 		State:       domain.PageStateEdited,
 		Type:        pageType,
 		Fingerprint: domain.Fingerprint(uuid.New().String()),
@@ -145,13 +147,12 @@ func (s *documentServiceImpl) AddPageToUserDocument(
 		return nil, err
 	}
 
-	page, err = s.documents.UpdatePage(domain.DocumentNumber(documentNumber), page)
+	page, err = s.documents.AddPage(domain.DocumentNumber(documentNumber), page)
 	if err != nil {
 		return nil, err
 	}
 
 	s.documentRegistry.Review(domain.DocumentNumber(documentNumber))
-
 	return page, nil
 }
 
@@ -214,7 +215,7 @@ func (s *documentServiceImpl) validatePageType(file *multipart.FileHeader) (doma
 	}
 
 	contentType := file.Header.Get(mimeHeaderKeyContentType)
-	if !validHighlightTypes.MatchString(contentType) {
+	if !validContentTypes.MatchString(contentType) {
 		return domain.PageTypeUnknown, BadRequestError.Newf("Page type '%s' is not supported", contentType)
 	}
 

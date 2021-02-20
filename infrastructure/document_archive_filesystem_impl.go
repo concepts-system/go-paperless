@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/concepts-system/go-paperless/domain"
 	"github.com/concepts-system/go-paperless/errors"
@@ -51,6 +52,13 @@ func (store *documentArchiveFileSystemImpl) StoreContent(
 	content io.Reader,
 ) error {
 	path := store.getContentPath(documentNumber, contentKey)
+	directory := filepath.Dir(path)
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+			return errors.Wrapf(err, "Failed to create directory '%s'", directory)
+		}
+	}
+
 	file, err := os.Create(path)
 
 	if err != nil {
@@ -77,7 +85,7 @@ func (store *documentArchiveFileSystemImpl) MoveContent(
 	}
 
 	destinationPath := store.getContentPath(documentNumber, destinationContentKey)
-	if _, err := os.Stat(destinationPath); !os.IsNotExist(err) {
+	if _, err := os.Stat(destinationPath); err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, "Destination content file '%s' does already exist", destinationPath)
 	}
 

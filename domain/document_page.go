@@ -41,7 +41,7 @@ const (
 type DocumentPage struct {
 	PageNumber  PageNumber
 	State       PageState
-	Content     Text
+	Text        Text
 	Type        PageType
 	Fingerprint Fingerprint
 }
