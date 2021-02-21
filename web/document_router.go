@@ -188,12 +188,11 @@ func (r *documentRouter) getDocumentPageContent(ec echo.Context) error {
 		return err
 	}
 
+	extension, mimeType := r.getPageContentFileInfos(page)
 	title := string(page.Document.Title)
 	if strings.TrimSpace(title) == "" {
 		title = fmt.Sprint(documentNumber)
 	}
-
-	extension, mimeType := r.getPageContentFileInfos(page)
 
 	return c.BinaryAttachment(
 		mimeType,
