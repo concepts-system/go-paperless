@@ -190,7 +190,7 @@ func (r *documentRouter) getDocumentPageContent(ec echo.Context) error {
 
 	title := string(page.Document.Title)
 	if strings.TrimSpace(title) == "" {
-		title = string(documentNumber)
+		title = fmt.Sprint(documentNumber)
 	}
 
 	extension, mimeType := r.getPageContentFileInfos(page)
