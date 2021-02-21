@@ -2,7 +2,7 @@ package web
 
 import "github.com/go-playground/validator"
 
-// Validator definess a struct for validating objects.
+// Validator defines a struct for validating objects.
 type Validator struct {
 	Validator *validator.Validate
 }

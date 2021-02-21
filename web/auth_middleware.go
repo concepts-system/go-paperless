@@ -101,7 +101,10 @@ func (auth *AuthMiddleware) Require(filter filter) echo.MiddlewareFunc {
 			c, _ := ec.(*context)
 
 			if !c.IsAuthenticated() {
-				_ = auth.authenticateRequest(c)
+				err := auth.authenticateRequest(c)
+				if err != nil {
+					return err
+				}
 			}
 
 			if err := filter(c); err != nil {
