@@ -131,6 +131,28 @@ func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, 
 	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
 }
 
+func (d documentsGormImpl) GetPagesByDocumentNumber(
+	documentNumber domain.DocumentNumber,
+	page domain.PageRequest,
+) ([]domain.DocumentPage, domain.Count, error) {
+	var totalCount int64
+	var pageModels []documentPageModel
+	err := d.db.
+		Where("document_number = ?", documentNumber).
+		Offset(page.Offset).
+		Limit(page.Size).
+		Find(&pageModels).
+		Count(&totalCount).
+		Error
+
+	if err != nil {
+		return nil, -1, errors.Wrapf(err, "Failed to retrieve document pages")
+	}
+
+	pages := d.mapper.MapPageModelsToDomainEntities(pageModels)
+	return pages, domain.Count(totalCount), nil
+}
+
 func (d documentsGormImpl) GetPageByDocumentNumberAndPageNumber(
 	documentNumber domain.DocumentNumber,
 	pageNumber domain.PageNumber,

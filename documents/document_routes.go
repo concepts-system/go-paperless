@@ -275,32 +275,6 @@ package documents
 // 	return c.JSON(http.StatusCreated, serializer.Response())
 // }
 
-// func getDocumentPages(ec echo.Context) error {
-// 	c, _ := ec.(api.Context)
-// 	id, err := bindDocumentID(ec)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	document, err := GetDocumentByID(id)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if !allowedToAccessDocument(c, document) {
-// 		return errors.Forbidden.New("Access to given document denied")
-// 	}
-
-// 	pr := c.BindPaging()
-// 	pages, totalCount, err := FindPagesByDocumentID(document.ID, pr)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	serializer := PageListSerializer{c, pages}
-// 	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
-// }
-
 // func getDocumentPage(ec echo.Context) error {
 // 	c, _ := ec.(api.Context)
 // 	id, err := bindDocumentID(ec)

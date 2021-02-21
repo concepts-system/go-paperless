@@ -38,7 +38,7 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	// documentGroup.GET("/:id/content", getDocumentContent)
 
 	pageGroup := documentGroup.Group("/:id/pages")
-	// pageGroup.GET("", getDocumentPages)
+	pageGroup.GET("", r.getDocumentPages)
 	pageGroup.POST("/content", r.addPageToDocument)
 	// pageGroup.GET("/:pageNumber", getDocumentPage)
 	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
@@ -97,6 +97,23 @@ func (r *documentRouter) getDocument(ec echo.Context) error {
 
 	serializer := documentSerializer{c, document}
 	return c.JSON(http.StatusOK, serializer.Response())
+}
+
+func (r *documentRouter) getDocumentPages(ec echo.Context) error {
+	c, _ := ec.(*context)
+	documentNumber, err := r.bindDocumentNumber(c)
+	if err != nil {
+		return err
+	}
+
+	pr := c.BindPaging()
+	pages, totalCount, err := r.documentService.GetUserDocumentPagesByDocumentNumber(*c.Username, documentNumber, pr.ToDomainPageRequest())
+	if err != nil {
+		return err
+	}
+
+	serializer := documentPageListSerializer{c, pages}
+	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
 }
 
 func (r *documentRouter) addPageToDocument(ec echo.Context) error {

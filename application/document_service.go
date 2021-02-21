@@ -31,6 +31,10 @@ type DocumentService interface {
 	// CreateNewDocument creates the given new document owned by the user with the given username.
 	CreateNewDocument(username string, document *domain.Document) (*domain.Document, error)
 
+	// GetUserDocumentPagesByDocumentNumber returns the document pages for the document with the given document number with respect to the given
+	// username and page request.
+	GetUserDocumentPagesByDocumentNumber(username string, documentNumber uint, pr domain.PageRequest) ([]domain.DocumentPage, int64, error)
+
 	// AddPageToUserDocument adds the given pages to the document with the given ID.
 	AddPageToUserDocument(username string, documentNumber uint, file *multipart.FileHeader) (*domain.DocumentPage, error)
 }
@@ -100,6 +104,24 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 	}
 
 	return newDocument, nil
+}
+
+func (s *documentServiceImpl) GetUserDocumentPagesByDocumentNumber(
+	username string,
+	documentNumber uint,
+	pr domain.PageRequest,
+) ([]domain.DocumentPage, int64, error) {
+	_, err := s.expectUserDocumentExists(domain.Name(username), domain.DocumentNumber(documentNumber))
+	if err != nil {
+		return nil, -1, err
+	}
+
+	pages, totalCount, err := s.documents.GetPagesByDocumentNumber(domain.DocumentNumber(documentNumber), pr)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	return pages, int64(totalCount), nil
 }
 
 func (s *documentServiceImpl) AddPageToUserDocument(
