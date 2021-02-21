@@ -56,7 +56,7 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 		log.Debug("Document is already archived; nothing to do")
 		return
 	default:
-		log.Errorf("Documents in state %s are not handled yet!", document.State)
+		log.Warnf("Documents in state %s are not handled yet!", document.State)
 	}
 }
 
@@ -75,7 +75,7 @@ func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, 
 			log.Error(err)
 		}
 	default:
-		log.Errorf("Document pages in state %s are not handled yet!", page.State)
+		log.Warnf("Document pages in state %s are not handled yet!", page.State)
 	}
 }
 

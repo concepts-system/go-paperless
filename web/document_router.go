@@ -40,7 +40,7 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	pageGroup := documentGroup.Group("/:id/pages")
 	pageGroup.GET("", r.getDocumentPages)
 	pageGroup.POST("/content", r.addPageToDocument)
-	// pageGroup.GET("/:pageNumber", getDocumentPage)
+	pageGroup.GET("/:pageNumber", r.getDocumentPage)
 	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
 	// // pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
 	// // pageGroup.GET("/:pageNumber/content", getPageContent)
@@ -99,6 +99,27 @@ func (r *documentRouter) getDocument(ec echo.Context) error {
 	return c.JSON(http.StatusOK, serializer.Response())
 }
 
+func (r *documentRouter) getDocumentPage(ec echo.Context) error {
+	c, _ := ec.(*context)
+	documentNumber, err := r.bindDocumentNumber(c)
+	if err != nil {
+		return err
+	}
+
+	pageNumber, err := r.bindPageNumber(c)
+	if err != nil {
+		return err
+	}
+
+	page, err := r.documentService.GetUserDocumentPageByDocumentNumberAndPageNumber(*c.Username, documentNumber, pageNumber)
+	if err != nil {
+		return err
+	}
+
+	serializer := documentPageSerializer{c, page}
+	return c.JSON(http.StatusOK, serializer.Response())
+}
+
 func (r *documentRouter) getDocumentPages(ec echo.Context) error {
 	c, _ := ec.(*context)
 	documentNumber, err := r.bindDocumentNumber(c)
@@ -154,12 +175,12 @@ func (r *documentRouter) bindDocumentNumber(c echo.Context) (uint, error) {
 	return uint(id), nil
 }
 
-// func bindPageNumber(c echo.Context) (uint, error) {
-// 	id, err := strconv.ParseUint(c.Param("pageNumber"), 10, 32)
+func (r *documentRouter) bindPageNumber(c echo.Context) (uint, error) {
+	id, err := strconv.ParseUint(c.Param("pageNumber"), 10, 32)
 
-// 	if err != nil || id < 0 {
-// 		return 0, application.BadRequestError.New("Page number has to be a non-negative integer")
-// 	}
+	if err != nil || id <= 0 {
+		return 0, application.BadRequestError.New("Page number has to be a non-negative integer")
+	}
 
-// 	return uint(id), nil
-// }
+	return uint(id), nil
+}

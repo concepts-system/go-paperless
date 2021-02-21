@@ -35,6 +35,10 @@ type DocumentService interface {
 	// username and page request.
 	GetUserDocumentPagesByDocumentNumber(username string, documentNumber uint, pr domain.PageRequest) ([]domain.DocumentPage, int64, error)
 
+	// GetUserDocumentPageByDocumentNumberAndPageNumber returns the page with the given page number for the document with the given document number,
+	// accessible by the user with the given username.
+	GetUserDocumentPageByDocumentNumberAndPageNumber(username string, documentNumber uint, pageNumber uint) (*domain.DocumentPage, error)
+
 	// AddPageToUserDocument adds the given pages to the document with the given ID.
 	AddPageToUserDocument(username string, documentNumber uint, file *multipart.FileHeader) (*domain.DocumentPage, error)
 }
@@ -122,6 +126,24 @@ func (s *documentServiceImpl) GetUserDocumentPagesByDocumentNumber(
 	}
 
 	return pages, int64(totalCount), nil
+}
+
+func (s *documentServiceImpl) GetUserDocumentPageByDocumentNumberAndPageNumber(
+	username string,
+	documentNumber uint,
+	pageNumber uint,
+) (*domain.DocumentPage, error) {
+	_, err := s.expectUserDocumentExists(domain.Name(username), domain.DocumentNumber(documentNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := s.documents.GetPageByDocumentNumberAndPageNumber(domain.DocumentNumber(documentNumber), domain.PageNumber(pageNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	return page, nil
 }
 
 func (s *documentServiceImpl) AddPageToUserDocument(
