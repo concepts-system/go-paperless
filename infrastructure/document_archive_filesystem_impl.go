@@ -27,11 +27,11 @@ func NewDocumentArchiveFileSystemImpl(basePath string) (domain.DocumentArchive, 
 	return &documentArchiveFileSystemImpl{basePath}, nil
 }
 
-// GetPageContent returns the content of a document or page from the store.
+// ReadContent returns the content of a document or page from the store.
 func (store *documentArchiveFileSystemImpl) ReadContent(
 	documentNumber domain.DocumentNumber,
 	contentKey domain.ContentKey,
-) (io.Reader, error) {
+) (io.ReadCloser, error) {
 	path := store.getContentPath(documentNumber, contentKey)
 	if _, err := os.Stat(path); err != nil {
 		return nil, errors.Wrapf(err, "Content file '%s' does not exist", path)

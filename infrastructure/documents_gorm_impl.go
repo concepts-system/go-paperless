@@ -34,13 +34,16 @@ type documentModel struct {
 type documentPageModel struct {
 	DocumentNumber uint `gorm:"not_null;primaryKey;autoIncrement:false"`
 	PageNumber     uint `gorm:"not_null;primaryKey;autoIncrement:false"`
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      *time.Time `gorm:"index"`
-	State          string     `gorm:"not_null;size:32"`
-	Type           string     `gorm:"not_null;size:32"`
-	Fingerprint    string     `gorm:"not_null;size:32"`
-	Text           string     `gorm:"size:8192"`
+
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time `gorm:"index"`
+	State       string     `gorm:"not_null;size:32"`
+	Type        string     `gorm:"not_null;size:32"`
+	Fingerprint string     `gorm:"not_null;size:32"`
+	Text        string     `gorm:"size:8192"`
+
+	Document *documentModel `gorm:"foreignKey:DocumentNumber"`
 }
 
 func (documentModel) TableName() string {
@@ -253,7 +256,7 @@ func (d *documentsGormImpl) getDocumentPageModelByDocumentNumberAndPageNumber(
 		PageNumber:     pageNumber,
 	}
 
-	err := d.db.First(&documentPage).Error
+	err := d.db.Preload("Document").First(&documentPage).Error
 
 	if err != nil {
 		return nil, err

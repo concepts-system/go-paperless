@@ -1,6 +1,7 @@
 package application
 
 import (
+	"io"
 	"mime/multipart"
 	"regexp"
 
@@ -41,6 +42,9 @@ type DocumentService interface {
 
 	// AddPageToUserDocument adds the given pages to the document with the given ID.
 	AddPageToUserDocument(username string, documentNumber uint, file *multipart.FileHeader) (*domain.DocumentPage, error)
+
+	// GetUserDocumentPageContent returns a reader to a document pages content, if present.
+	GetUserDocumentPageContent(username string, documentNumber uint, pageNumber uint) (io.ReadCloser, error)
 }
 
 type documentServiceImpl struct {
@@ -198,6 +202,28 @@ func (s *documentServiceImpl) AddPageToUserDocument(
 
 	s.documentRegistry.Review(domain.DocumentNumber(documentNumber))
 	return page, nil
+}
+
+func (s *documentServiceImpl) GetUserDocumentPageContent(
+	username string,
+	documentNumber uint,
+	pageNumber uint,
+) (io.ReadCloser, error) {
+	_, err := s.expectUserDocumentExists(domain.Name(username), domain.DocumentNumber(documentNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := s.documents.GetPageByDocumentNumberAndPageNumber(domain.DocumentNumber(documentNumber), domain.PageNumber(pageNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	if page.State == domain.PageStateEdited {
+		return nil, NotFoundError.Newf("Page '%d' for document '%d' has no content available until preprocessing finished", pageNumber, documentNumber)
+	}
+
+	return s.documentArchive.ReadContent(page.Document.DocumentNumber, page.ContentKey())
 }
 
 /* Helper Methods */

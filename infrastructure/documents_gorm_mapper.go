@@ -96,6 +96,7 @@ func (m *documentsGormMapper) MapPageModelToDomainEntity(page *documentPageModel
 		Text:        domain.Text(page.Text),
 		Type:        domain.PageType(page.Type),
 		Fingerprint: domain.Fingerprint(page.Fingerprint),
+		Document:    m.MapDocumentModelToDoaminEntity(page.Document),
 	}
 }
 

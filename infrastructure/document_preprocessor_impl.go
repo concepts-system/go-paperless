@@ -97,6 +97,7 @@ func (p *documentPreprocessorImpl) convertPageContentToTIFF(
 	if err != nil {
 		return err
 	}
+	defer content.Close()
 
 	image, _, err := image.Decode(content)
 	if err != nil {

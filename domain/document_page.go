@@ -44,6 +44,7 @@ type DocumentPage struct {
 	Text        Text
 	Type        PageType
 	Fingerprint Fingerprint
+	Document    *Document
 }
 
 // ContentKey returns the content key for the document.

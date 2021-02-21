@@ -8,7 +8,7 @@ import (
 // They provide functionality for storing and retreiving document page data.
 type DocumentArchive interface {
 	// ReadContent returns the content of a document or page from the store.
-	ReadContent(documentNumber DocumentNumber, contentKey ContentKey) (io.Reader, error)
+	ReadContent(documentNumber DocumentNumber, contentKey ContentKey) (io.ReadCloser, error)
 
 	// StoreContent stores content for a new document or page.
 	StoreContent(documentNumber DocumentNumber, contentKey ContentKey, content io.Reader) error

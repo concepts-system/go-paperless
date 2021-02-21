@@ -1,10 +1,13 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/concepts-system/go-paperless/application"
+	"github.com/concepts-system/go-paperless/domain"
 	"github.com/labstack/echo/v4"
 )
 
@@ -43,7 +46,7 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	pageGroup.GET("/:pageNumber", r.getDocumentPage)
 	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
 	// // pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
-	// // pageGroup.GET("/:pageNumber/content", getPageContent)
+	pageGroup.GET("/:pageNumber/content", r.getDocumentPageContent)
 	// // pageGroup.PUT("/:pageNumber/content", updatePageContent)
 }
 
@@ -99,6 +102,23 @@ func (r *documentRouter) getDocument(ec echo.Context) error {
 	return c.JSON(http.StatusOK, serializer.Response())
 }
 
+func (r *documentRouter) getDocumentPages(ec echo.Context) error {
+	c, _ := ec.(*context)
+	documentNumber, err := r.bindDocumentNumber(c)
+	if err != nil {
+		return err
+	}
+
+	pr := c.BindPaging()
+	pages, totalCount, err := r.documentService.GetUserDocumentPagesByDocumentNumber(*c.Username, documentNumber, pr.ToDomainPageRequest())
+	if err != nil {
+		return err
+	}
+
+	serializer := documentPageListSerializer{c, pages}
+	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
+}
+
 func (r *documentRouter) getDocumentPage(ec echo.Context) error {
 	c, _ := ec.(*context)
 	documentNumber, err := r.bindDocumentNumber(c)
@@ -118,23 +138,6 @@ func (r *documentRouter) getDocumentPage(ec echo.Context) error {
 
 	serializer := documentPageSerializer{c, page}
 	return c.JSON(http.StatusOK, serializer.Response())
-}
-
-func (r *documentRouter) getDocumentPages(ec echo.Context) error {
-	c, _ := ec.(*context)
-	documentNumber, err := r.bindDocumentNumber(c)
-	if err != nil {
-		return err
-	}
-
-	pr := c.BindPaging()
-	pages, totalCount, err := r.documentService.GetUserDocumentPagesByDocumentNumber(*c.Username, documentNumber, pr.ToDomainPageRequest())
-	if err != nil {
-		return err
-	}
-
-	serializer := documentPageListSerializer{c, pages}
-	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
 }
 
 func (r *documentRouter) addPageToDocument(ec echo.Context) error {
@@ -163,6 +166,43 @@ func (r *documentRouter) addPageToDocument(ec echo.Context) error {
 	return c.JSON(http.StatusCreated, serializer.Response())
 }
 
+func (r *documentRouter) getDocumentPageContent(ec echo.Context) error {
+	c, _ := ec.(*context)
+	documentNumber, err := r.bindDocumentNumber(c)
+	if err != nil {
+		return err
+	}
+
+	pageNumber, err := r.bindPageNumber(c)
+	if err != nil {
+		return err
+	}
+
+	page, err := r.documentService.GetUserDocumentPageByDocumentNumberAndPageNumber(*c.Username, documentNumber, pageNumber)
+	if err != nil {
+		return err
+	}
+
+	content, err := r.documentService.GetUserDocumentPageContent(*c.Username, documentNumber, pageNumber)
+	if err != nil {
+		return err
+	}
+
+	title := string(page.Document.Title)
+	if strings.TrimSpace(title) == "" {
+		title = string(documentNumber)
+	}
+
+	extension, mimeType := r.getPageContentFileInfos(page)
+
+	return c.BinaryAttachment(
+		mimeType,
+		fmt.Sprintf("%s - %d.%s", title, pageNumber, extension),
+		-1,
+		content,
+	)
+}
+
 /* Helper Methods */
 
 func (r *documentRouter) bindDocumentNumber(c echo.Context) (uint, error) {
@@ -183,4 +223,13 @@ func (r *documentRouter) bindPageNumber(c echo.Context) (uint, error) {
 	}
 
 	return uint(id), nil
+}
+
+func (r *documentRouter) getPageContentFileInfos(page *domain.DocumentPage) (string, string) {
+	switch page.Type {
+	case domain.PageTypeTIFF:
+		return ".tiff", "image/tiff"
+	default:
+		return "bin", "application/octet-stream"
+	}
 }
