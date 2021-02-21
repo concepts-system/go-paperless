@@ -120,31 +120,31 @@ func (d documentRegistryImpl) analyzePage(
 
 /* Helper Methods */
 
-func (d documentRegistryImpl) registerDocumentReceiver(
-	mailbox Mailbox,
-	handler func(DocumentNumber) error,
-) {
-	receiver := func(message ...interface{}) error {
-		if len(message) != 2 {
-			return errors.New("Unexpected document message length")
-		}
+// func (d documentRegistryImpl) registerDocumentReceiver(
+// 	mailbox Mailbox,
+// 	handler func(DocumentNumber) error,
+// ) {
+// 	receiver := func(message ...interface{}) error {
+// 		if len(message) != 2 {
+// 			return errors.New("Unexpected document message length")
+// 		}
 
-		documentNumber, ok := message[0].(DocumentNumber)
-		if !ok {
-			return errors.New("Unexpected document message format")
-		}
+// 		documentNumber, ok := message[0].(DocumentNumber)
+// 		if !ok {
+// 			return errors.New("Unexpected document message format")
+// 		}
 
-		log.Infof(
-			"Received message in '%v': document %v",
-			mailbox,
-			documentNumber,
-		)
+// 		log.Infof(
+// 			"Received message in '%v': document %v",
+// 			mailbox,
+// 			documentNumber,
+// 		)
 
-		return handler(documentNumber)
-	}
+// 		return handler(documentNumber)
+// 	}
 
-	d.mustRegisterReceiver(mailbox, receiver)
-}
+// 	d.mustRegisterReceiver(mailbox, receiver)
+// }
 
 func (d documentRegistryImpl) registerDocumentPageReceiver(
 	mailbox Mailbox,

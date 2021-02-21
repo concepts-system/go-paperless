@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	validContentTypes   = regexp.MustCompile("^image/(bmp|gif|jpeg|png|tiff)$")
-	validHighlightTypes = regexp.MustCompile("^html$")
+	validContentTypes = regexp.MustCompile("^image/(bmp|gif|jpeg|png|tiff)$")
+	// validHighlightTypes = regexp.MustCompile("^html$")
 )
 
 // DocumentService defines an application service for managing document-related
