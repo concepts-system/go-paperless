@@ -1,4 +1,6 @@
 package domain
 
-// TODO: Add interface for document analyzer component, responsible for
-//       doing the OCR step.
+// DocumentAnalyzer defines functionality for obtaining text from pages.
+type DocumentAnalyzer interface {
+	ScanPage(documentNumber DocumentNumber, pageNumber PageNumber) error
+}

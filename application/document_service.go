@@ -101,7 +101,7 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 	}
 
 	document.Owner = owner
-	document.State = domain.DocumentStateEdited
+	document.State = domain.DocumentStateEmpty
 	document.Type = ""
 	document.Fingerprint = ""
 	document.Pages = nil
@@ -214,13 +214,21 @@ func (s *documentServiceImpl) GetUserDocumentPageContent(
 		return nil, err
 	}
 
-	page, err := s.documents.GetPageByDocumentNumberAndPageNumber(domain.DocumentNumber(documentNumber), domain.PageNumber(pageNumber))
+	page, err := s.documents.GetPageByDocumentNumberAndPageNumber(
+		domain.DocumentNumber(documentNumber),
+		domain.PageNumber(pageNumber),
+	)
+
 	if err != nil {
 		return nil, err
 	}
 
 	if page.State == domain.PageStateEdited {
-		return nil, NotFoundError.Newf("Page '%d' for document '%d' has no content available until preprocessing finished", pageNumber, documentNumber)
+		return nil, NotFoundError.Newf(
+			"Page '%d' for document '%d' has no content available until preprocessing finished",
+			pageNumber,
+			documentNumber,
+		)
 	}
 
 	return s.documentArchive.ReadContent(page.Document.DocumentNumber, page.ContentKey())

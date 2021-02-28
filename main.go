@@ -6,8 +6,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/concepts-system/go-paperless/common"
 	"github.com/concepts-system/go-paperless/domain"
-	"github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/infrastructure"
 
@@ -27,7 +27,7 @@ const (
 	documentsDirectory = "documents"
 )
 
-var log = logrus.WithField("component", "main")
+var log = common.NewLogger("main")
 
 type bootstrapper struct {
 	config   *config.Configuration
@@ -38,8 +38,9 @@ type bootstrapper struct {
 
 	users                domain.Users
 	documents            domain.Documents
-	documentPreprocessor domain.DocumentPreprocessor
 	documentArchive      domain.DocumentArchive
+	documentPreprocessor domain.DocumentPreprocessor
+	documentAnalyzer     domain.DocumentAnalyzer
 	documentRegistry     domain.DocumentRegistry
 
 	authService     application.AuthService
@@ -131,11 +132,13 @@ func setupDependencies(bs *bootstrapper) {
 	bs.documents = infrastructure.NewDocuments(bs.database)
 	initializeDocumentArchive(bs)
 	bs.documentPreprocessor = infrastructure.NewDocumentPreprocessorImpl(bs.documents, bs.documentArchive)
+	bs.documentAnalyzer = infrastructure.NewTesseractOcrEngine(bs.documents, bs.documentArchive)
 
 	bs.documentRegistry = domain.NewDocumentRegistry(
 		bs.tubeMail,
 		bs.documents,
 		bs.documentPreprocessor,
+		bs.documentAnalyzer,
 	)
 
 	bs.userService = application.NewUserService(bs.users)

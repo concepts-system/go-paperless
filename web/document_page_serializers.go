@@ -11,11 +11,13 @@ type documentPageResponse struct {
 	State       string `json:"state"`
 	Fingerprint string `json:"fingerprint"`
 	Type        string `json:"type"`
+	Text        string `json:"text,omitempty"`
 }
 
 type (
 	documentPageSerializer struct {
-		C echo.Context
+		C           echo.Context
+		includeText bool
 		*domain.DocumentPage
 	}
 
@@ -27,11 +29,18 @@ type (
 
 // Response returns the API response for a document page.
 func (s documentPageSerializer) Response() documentPageResponse {
+	var text string
+
+	if s.includeText {
+		text = string(s.Text)
+	}
+
 	return documentPageResponse{
 		PageNumber:  uint(s.PageNumber),
 		Fingerprint: string(s.Fingerprint),
 		State:       string(s.State),
 		Type:        string(s.Type),
+		Text:        text,
 	}
 }
 
@@ -40,8 +49,7 @@ func (s documentPageListSerializer) Response() []documentPageResponse {
 	response := make([]documentPageResponse, len(s.Pages))
 
 	for i, document := range s.Pages {
-		serializer := documentPageSerializer{s.C, &document}
-		response[i] = serializer.Response()
+		response[i] = documentPageSerializer{s.C, false, &document}.Response()
 	}
 
 	return response

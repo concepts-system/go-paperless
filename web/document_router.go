@@ -136,7 +136,7 @@ func (r *documentRouter) getDocumentPage(ec echo.Context) error {
 		return err
 	}
 
-	serializer := documentPageSerializer{c, page}
+	serializer := documentPageSerializer{c, true, page}
 	return c.JSON(http.StatusOK, serializer.Response())
 }
 
@@ -162,7 +162,7 @@ func (r *documentRouter) addPageToDocument(ec echo.Context) error {
 		return err
 	}
 
-	serializer := documentPageSerializer{c, page}
+	serializer := documentPageSerializer{c, false, page}
 	return c.JSON(http.StatusCreated, serializer.Response())
 }
 

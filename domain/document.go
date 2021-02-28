@@ -26,6 +26,9 @@ const (
 )
 
 const (
+	// DocumentStateEdited marks a document without any pages.
+	DocumentStateEmpty = DocumentState("EMPTY")
+
 	// DocumentStateEdited marks a document edited.
 	// A document in this state has edited pages but is not ready for
 	// further processing, as not all pages have been processed.

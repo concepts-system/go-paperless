@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/concepts-system/go-paperless/application"
+	"github.com/concepts-system/go-paperless/common"
 	"github.com/concepts-system/go-paperless/config"
 )
 
@@ -26,7 +27,7 @@ func NewServer(
 	config *config.Configuration,
 	authService application.AuthService,
 ) *Server {
-	log.WithField("component", "server").Info("Initializing server...")
+	common.NewLogger("server").Info("Initializing server...")
 
 	server := Server{
 		echo:   echo.New(),
