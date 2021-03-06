@@ -42,7 +42,7 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 
 	pageGroup := documentGroup.Group("/:id/pages")
 	pageGroup.GET("", r.getDocumentPages)
-	pageGroup.POST("/content", r.addPageToDocument)
+	pageGroup.POST("/content", r.addPagesToDocument)
 	pageGroup.GET("/:pageNumber", r.getDocumentPage)
 	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
 	// // pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
@@ -140,7 +140,7 @@ func (r *documentRouter) getDocumentPage(ec echo.Context) error {
 	return c.JSON(http.StatusOK, serializer.Response())
 }
 
-func (r *documentRouter) addPageToDocument(ec echo.Context) error {
+func (r *documentRouter) addPagesToDocument(ec echo.Context) error {
 	c, _ := ec.(*context)
 	documentNumber, err := r.bindDocumentNumber(c)
 	if err != nil {
@@ -153,16 +153,12 @@ func (r *documentRouter) addPageToDocument(ec echo.Context) error {
 	}
 
 	files := form.File[pagesFormKey]
-	if len(files) != 1 {
-		return application.BadRequestError.Newf("Expecting '%s' to contain at exactly one file", pagesFormKey)
-	}
-
-	page, err := r.documentService.AddPageToUserDocument(*c.Username, documentNumber, files[0])
+	pages, err := r.documentService.AddPagesToUserDocument(*c.Username, documentNumber, files)
 	if err != nil {
 		return err
 	}
 
-	serializer := documentPageSerializer{c, false, page}
+	serializer := documentPageListSerializer{c, pages}
 	return c.JSON(http.StatusCreated, serializer.Response())
 }
 

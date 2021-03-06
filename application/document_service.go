@@ -40,8 +40,8 @@ type DocumentService interface {
 	// accessible by the user with the given username.
 	GetUserDocumentPageByDocumentNumberAndPageNumber(username string, documentNumber uint, pageNumber uint) (*domain.DocumentPage, error)
 
-	// AddPageToUserDocument adds the given pages to the document with the given ID.
-	AddPageToUserDocument(username string, documentNumber uint, file *multipart.FileHeader) (*domain.DocumentPage, error)
+	// AddPagesToUserDocument adds the given pages to the document with the given ID.
+	AddPagesToUserDocument(username string, documentNumber uint, files []*multipart.FileHeader) ([]domain.DocumentPage, error)
 
 	// GetUserDocumentPageContent returns a reader to a document pages content, if present.
 	GetUserDocumentPageContent(username string, documentNumber uint, pageNumber uint) (io.ReadCloser, error)
@@ -147,14 +147,18 @@ func (s *documentServiceImpl) GetUserDocumentPageByDocumentNumberAndPageNumber(
 		return nil, err
 	}
 
+	if page == nil {
+		return nil, NotFoundError.Newf("Page %d of document %d does not exist", pageNumber, documentNumber)
+	}
+
 	return page, nil
 }
 
-func (s *documentServiceImpl) AddPageToUserDocument(
+func (s *documentServiceImpl) AddPagesToUserDocument(
 	username string,
 	documentNumber uint,
-	file *multipart.FileHeader,
-) (*domain.DocumentPage, error) {
+	files []*multipart.FileHeader,
+) ([]domain.DocumentPage, error) {
 	document, err := s.expectUserDocumentExists(
 		domain.Name(username),
 		domain.DocumentNumber(documentNumber),
@@ -163,31 +167,42 @@ func (s *documentServiceImpl) AddPageToUserDocument(
 		return nil, err
 	}
 
-	pageType, err := s.validatePageType(file)
-	if err != nil {
-		return nil, err
-	}
+	pages := make([]domain.DocumentPage, 0)
+	i := 0
+	for _, file := range files {
+		pageType, err := s.validatePageType(file)
+		if err != nil {
+			continue
+		}
 
-	fileContent, err := file.Open()
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to process file")
-	}
+		fileContent, err := file.Open()
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to process file")
+		}
 
-	page := &domain.DocumentPage{
-		PageNumber:  domain.PageNumber(len(document.Pages) + 1),
-		State:       domain.PageStateEdited,
-		Type:        pageType,
-		Fingerprint: domain.Fingerprint(uuid.New().String()),
-	}
+		page := &domain.DocumentPage{
+			PageNumber:  domain.PageNumber(len(document.Pages) + i + 1),
+			State:       domain.PageStateEdited,
+			Type:        pageType,
+			Fingerprint: domain.Fingerprint(uuid.New().String()),
+		}
 
-	err = s.documentArchive.StoreContent(
-		domain.DocumentNumber(documentNumber),
-		page.ContentKey(),
-		fileContent,
-	)
+		err = s.documentArchive.StoreContent(
+			domain.DocumentNumber(documentNumber),
+			page.ContentKey(),
+			fileContent,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		page, err = s.documents.AddPage(domain.DocumentNumber(documentNumber), page)
+		if err != nil {
+			return nil, err
+		}
+
+		pages = append(pages, *page)
+		i++
 	}
 
 	document.State = domain.DocumentStateEdited
@@ -195,13 +210,8 @@ func (s *documentServiceImpl) AddPageToUserDocument(
 		return nil, err
 	}
 
-	page, err = s.documents.AddPage(domain.DocumentNumber(documentNumber), page)
-	if err != nil {
-		return nil, err
-	}
-
 	s.documentRegistry.Review(domain.DocumentNumber(documentNumber))
-	return page, nil
+	return pages, nil
 }
 
 func (s *documentServiceImpl) GetUserDocumentPageContent(
