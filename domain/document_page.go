@@ -44,6 +44,7 @@ type DocumentPage struct {
 	Text        Text
 	Type        PageType
 	Fingerprint Fingerprint
+	IsInReview  bool
 	Document    *Document
 }
 

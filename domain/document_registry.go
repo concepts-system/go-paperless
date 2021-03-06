@@ -48,8 +48,6 @@ func NewDocumentRegistry(
 
 func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 	log.Debugf("Reviewing document %d", documentNumber)
-	// TODO: Make sure documents are not reviewed multiple times in parallel
-	//		 i.e. add some document.isInReview flag
 	document, err := d.documents.GetByDocumentNumber(documentNumber)
 	if err != nil {
 		log.Error(err)
@@ -70,12 +68,22 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 
 func (d documentRegistryImpl) reviewDocumentPages(document *Document) {
 	for _, page := range document.Pages {
-		d.reviewDocumentPage(document.DocumentNumber, page)
+		d.reviewDocumentPage(document.DocumentNumber, &page)
 	}
 }
 
-func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, page DocumentPage) {
-	var err error
+func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, page *DocumentPage) {
+	pageNumber := page.PageNumber
+
+	page, err := d.startPageReview(documentNumber, page)
+	if err != nil {
+		log.Error(err)
+	}
+
+	if page == nil {
+		log.Infof("Document %d page %d is already in review; skipping", documentNumber, pageNumber)
+		return
+	}
 
 	switch page.State {
 	case PageStateEdited:
@@ -86,6 +94,7 @@ func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, 
 		err = d.tubeMail.SendMessage(malboxPageAnalyze, documentNumber, page.PageNumber)
 	default:
 		log.Warnf("Document pages in state %s are not handled yet!", page.State)
+		_, err = d.finishPageReview(documentNumber, pageNumber, page.State)
 	}
 
 	if err != nil {
@@ -111,13 +120,7 @@ func (d documentRegistryImpl) preprocessPage(
 		return err
 	}
 
-	page, err := d.documents.GetPageByDocumentNumberAndPageNumber(documentNumber, pageNumber)
-	if err != nil {
-		return err
-	}
-
-	page.State = PageStatePreprocessed
-	if _, err = d.documents.UpdatePage(documentNumber, page); err != nil {
+	if _, err := d.finishPageReview(documentNumber, pageNumber, PageStatePreprocessed); err != nil {
 		return err
 	}
 
@@ -133,13 +136,7 @@ func (d documentRegistryImpl) analyzePage(
 		return err
 	}
 
-	page, err := d.documents.GetPageByDocumentNumberAndPageNumber(documentNumber, pageNumber)
-	if err != nil {
-		return err
-	}
-
-	page.State = PageStateAnalyzed
-	if _, err = d.documents.UpdatePage(documentNumber, page); err != nil {
+	if _, err := d.finishPageReview(documentNumber, pageNumber, PageStateAnalyzed); err != nil {
 		return err
 	}
 
@@ -207,4 +204,39 @@ func (d documentRegistryImpl) mustRegisterReceiver(mailbox Mailbox, receiver Rec
 	if err := d.tubeMail.RegisterReceiver(mailbox, receiver); err != nil {
 		log.Fatal("Failed to register receiver", err)
 	}
+}
+
+func (d documentRegistryImpl) startPageReview(documentNumber DocumentNumber, page *DocumentPage) (*DocumentPage, error) {
+	if page.IsInReview {
+		return nil, nil
+	}
+
+	page.IsInReview = true
+	page, err := d.documents.UpdatePage(documentNumber, page)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return page, nil
+}
+
+func (d documentRegistryImpl) finishPageReview(documentNumber DocumentNumber, pageNumber PageNumber, state PageState) (*DocumentPage, error) {
+	page, err := d.documents.GetPageByDocumentNumberAndPageNumber(documentNumber, pageNumber)
+	if err != nil {
+		log.Error(err)
+	}
+
+	if !page.IsInReview {
+		return nil, nil
+	}
+
+	page.IsInReview = false
+	page.State = state
+	page, err = d.documents.UpdatePage(documentNumber, page)
+	if err != nil {
+		return nil, err
+	}
+
+	return page, nil
 }

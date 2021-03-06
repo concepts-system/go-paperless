@@ -42,6 +42,7 @@ type documentPageModel struct {
 	Type        string     `gorm:"not_null;size:32"`
 	Fingerprint string     `gorm:"not_null;size:32"`
 	Text        string     `gorm:"size:8192"`
+	IsInReview  bool
 
 	Document *documentModel `gorm:"foreignKey:DocumentNumber"`
 }

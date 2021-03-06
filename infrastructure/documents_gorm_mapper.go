@@ -81,6 +81,7 @@ func (m *documentsGormMapper) MapDomainEntityToPageModel(
 		Type:           string(page.Type),
 		Fingerprint:    string(page.Fingerprint),
 		Text:           string(page.Text),
+		IsInReview:     page.IsInReview,
 	}
 }
 
@@ -96,6 +97,7 @@ func (m *documentsGormMapper) MapPageModelToDomainEntity(page *documentPageModel
 		Text:        domain.Text(page.Text),
 		Type:        domain.PageType(page.Type),
 		Fingerprint: domain.Fingerprint(page.Fingerprint),
+		IsInReview:  page.IsInReview,
 		Document:    m.MapDocumentModelToDoaminEntity(page.Document),
 	}
 }
