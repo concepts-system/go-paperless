@@ -26,6 +26,7 @@ type documentModel struct {
 	State       string     `gorm:"not_null;size:32"`
 	Fingerprint string     `gorm:"size:255;index"`
 	Type        string     `gorm:"not_null;size:32"`
+	IsInReview  bool
 
 	Owner *userModel
 	Pages []documentPageModel `gorm:"foreignkey:DocumentNumber"`
@@ -110,6 +111,7 @@ func (d documentsGormImpl) FindByUsername(
 	)
 
 	err := d.db.
+		Preload("Pages").
 		Joins("inner join users on users.id = documents.owner_id").
 		Where("users.username = ?", username).
 		Offset(page.Offset).
@@ -146,8 +148,13 @@ func (d documentsGormImpl) Add(document *domain.Document) (*domain.Document, err
 	}
 
 	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
-	if err := d.db.Create(documentModel).Scan(documentModel).Error; err != nil {
+	if err := d.db.Create(documentModel).Error; err != nil {
 		return nil, errors.Wrap(err, "Failed to create document")
+	}
+
+	documentModel, err = d.getDocumentModelByDocumentNumber(documentModel.DocumentNumber)
+	if err != nil {
+		return nil, err
 	}
 
 	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil
@@ -165,8 +172,13 @@ func (d documentsGormImpl) Update(document *domain.Document) (*domain.Document, 
 	}
 
 	documentModel := d.mapper.MapDomainEntityToDocumentModel(owner.ID, document)
-	if err := d.db.Save(documentModel).Scan(documentModel).Error; err != nil {
+	if err := d.db.Save(documentModel).Error; err != nil {
 		return nil, errors.Wrap(err, "Failed to update document")
+	}
+
+	documentModel, err = d.getDocumentModelByDocumentNumber(documentModel.DocumentNumber)
+	if err != nil {
+		return nil, err
 	}
 
 	return d.mapper.MapDocumentModelToDoaminEntity(documentModel), nil

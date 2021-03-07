@@ -47,15 +47,17 @@ const (
 // Document represents a document managed by the system.
 type Document struct {
 	DocumentNumber DocumentNumber
-	Owner          *User
 	Title          Text
 	Date           *time.Time
 	State          DocumentState
 	Fingerprint    Fingerprint
 	Type           DocumentType
+	IsInReview     bool
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	Pages          []DocumentPage
+
+	Owner *User
+	Pages []DocumentPage
 }
 
 // ContentKey returns the content key for the document.

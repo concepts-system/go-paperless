@@ -28,9 +28,10 @@ func (m *documentsGormMapper) MapDocumentModelToDoaminEntity(
 		State:          domain.DocumentState(document.State),
 		Fingerprint:    domain.Fingerprint(document.Fingerprint),
 		Type:           domain.DocumentType(document.Type),
-		Owner:          m.usersMapper.MapUserModelToDomainEntity(document.Owner),
+		IsInReview:     document.IsInReview,
 		CreatedAt:      document.CreatedAt,
 		UpdatedAt:      document.UpdatedAt,
+		Owner:          m.usersMapper.MapUserModelToDomainEntity(document.Owner),
 		Pages:          m.MapPageModelsToDomainEntities(document.Pages),
 	}
 }
@@ -65,6 +66,7 @@ func (m *documentsGormMapper) MapDomainEntityToDocumentModel(ownerID uint, docum
 		State:          string(document.State),
 		Fingerprint:    string(document.Fingerprint),
 		Type:           string(document.Type),
+		IsInReview:     document.IsInReview,
 		CreatedAt:      document.CreatedAt,
 		UpdatedAt:      document.UpdatedAt,
 	}

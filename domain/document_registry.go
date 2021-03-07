@@ -56,6 +56,18 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 	document, err := d.documents.GetByDocumentNumber(documentNumber)
 	if err != nil {
 		log.Error(err)
+		return
+	}
+
+	document, err = d.startDocumentReview(document)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if document == nil {
+		log.Infof("Document %d is already in review; skipping", documentNumber)
+		return
 	}
 
 	switch document.State {
@@ -65,10 +77,13 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 	case DocumentStateEdited:
 		log.Debug("Document has been edited since last review; reviewing pages")
 		d.reviewDocumentPages(document)
+		_, err = d.finishDocumentReview(documentNumber, DocumentStateEdited)
 	case DocumentStateArchived:
 		log.Debug("Document is already archived; nothing to do")
+		_, err = d.finishDocumentReview(documentNumber, DocumentStateArchived)
 	default:
 		log.Warnf("Documents in state %s are not handled yet!", document.State)
+		_, err = d.finishDocumentReview(documentNumber, document.State)
 	}
 
 	if err != nil {
@@ -94,10 +109,12 @@ func (d documentRegistryImpl) reviewDocumentPages(document *Document) {
 
 func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, page *DocumentPage) {
 	pageNumber := page.PageNumber
+	log.Debugf("Reviewing page %d of document %d", pageNumber, documentNumber)
 
 	page, err := d.startPageReview(documentNumber, page)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	if page == nil {
@@ -240,13 +257,28 @@ func (d documentRegistryImpl) mustRegisterReceiver(mailbox Mailbox, receiver Rec
 	}
 }
 
+func (d documentRegistryImpl) startDocumentReview(document *Document) (*Document, error) {
+	if document.IsInReview {
+		return nil, nil
+	}
+
+	document.IsInReview = true
+	document, err := d.documents.Update(document)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return document, nil
+}
+
 func (d documentRegistryImpl) finishDocumentReview(documentNumber DocumentNumber, state DocumentState) (*Document, error) {
 	document, err := d.documents.GetByDocumentNumber(documentNumber)
 	if err != nil {
 		log.Error(err)
 	}
 
-	// TODO: Introduce 'isInReview' flag as for pages
+	document.IsInReview = false
 	document.State = state
 	document, err = d.documents.Update(document)
 	if err != nil {
