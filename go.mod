@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.0
+	github.com/blevesearch/bleve/v2 v2.0.2 // indirect
 	github.com/contribsys/faktory v0.9.0-1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0

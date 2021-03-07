@@ -79,6 +79,8 @@ func (c *context) BindPaging() pageRequest {
 		pageRequest.Size = maxPageSize
 	}
 
+	pageRequest.Sort = strings.TrimSpace(pageRequest.Sort)
+
 	return pageRequest
 }
 
@@ -87,10 +89,10 @@ func (c *context) Page(
 	status int,
 	page pageRequest,
 	totalCount int64,
-	data interface{},
+	data []interface{},
 ) error {
 	response := pageResponse{
-		Size:       page.Size,
+		Size:       len(data),
 		Offset:     page.Offset,
 		TotalCount: totalCount,
 		Data:       data,

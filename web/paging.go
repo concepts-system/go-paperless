@@ -14,8 +14,9 @@ const (
 
 // PageRequest defines a struct for declaring pagin information for requests.
 type pageRequest struct {
-	Offset int `form:"offset"`
-	Size   int `form:"size"`
+	Offset int    `form:"offset" query:"offset"`
+	Size   int    `form:"size" query:"offset"`
+	Sort   string `form:"sort" query:"sort"`
 }
 
 // ToDomainPageRequest maps the given page request to a domain value.

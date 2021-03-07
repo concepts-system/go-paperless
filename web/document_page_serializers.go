@@ -45,8 +45,8 @@ func (s documentPageSerializer) Response() documentPageResponse {
 }
 
 // Response returns the API response for a list of document pages.
-func (s documentPageListSerializer) Response() []documentPageResponse {
-	response := make([]documentPageResponse, len(s.Pages))
+func (s documentPageListSerializer) Response() []interface{} {
+	response := make([]interface{}, len(s.Pages))
 
 	for i, document := range s.Pages {
 		response[i] = documentPageSerializer{s.C, false, &document}.Response()

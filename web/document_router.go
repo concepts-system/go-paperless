@@ -33,7 +33,7 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 
 	documentGroup := apiGroup.Group("/documents", auth.RequireAuthentication())
 	documentGroup.GET("", r.getDocuments)
-	// documentGroup.GET("/search", searchDocuments)
+	documentGroup.GET("/search", r.searchDocuments)
 	documentGroup.POST("", r.createDocument)
 	documentGroup.GET("/:id", r.getDocument)
 	// documentGroup.PUT("/:id", updateDocument)
@@ -66,6 +66,24 @@ func (r *documentRouter) getDocuments(ec echo.Context) error {
 	}
 
 	serializer := documentListSerializer{c, documents}
+	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
+}
+
+func (r *documentRouter) searchDocuments(ec echo.Context) error {
+	c, _ := ec.(*context)
+	pr := c.BindPaging()
+
+	results, totalCount, err := r.documentService.SearchUserDocuments(
+		*c.Username,
+		c.QueryParam("query"),
+		pr.ToDomainPageRequest(),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	serializer := documentSearchResultListSerializer{c, results}
 	return c.Page(http.StatusOK, pr, totalCount, serializer.Response())
 }
 

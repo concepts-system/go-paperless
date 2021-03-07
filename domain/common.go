@@ -21,4 +21,5 @@ type (
 type PageRequest struct {
 	Offset PageOffset
 	Size   PageSize
+	Sort   string
 }

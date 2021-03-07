@@ -63,6 +63,28 @@ func NewDocuments(db *Database) domain.Documents {
 	}
 }
 
+func (d documentsGormImpl) Find(page domain.PageRequest) ([]domain.Document, domain.Count, error) {
+	var (
+		documents  []documentModel
+		totalCount int64
+	)
+
+	err := d.db.
+		Preload("Owner").
+		Preload("Pages").
+		Offset(page.Offset).
+		Limit(page.Size).
+		Find(&documents).
+		Count(&totalCount).
+		Error
+
+	if err != nil {
+		return nil, -1, err
+	}
+
+	return d.mapper.MapDocumentModelsToDomainEntities(documents), domain.Count(totalCount), nil
+}
+
 func (d documentsGormImpl) FindByUsername(
 	username domain.Name,
 	page domain.PageRequest,

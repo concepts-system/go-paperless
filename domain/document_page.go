@@ -19,6 +19,7 @@ type (
 const (
 	// PageTypeTIFF
 	PageTypeTIFF = PageType("TIFF")
+
 	// PageTypeUnknown
 	PageTypeUnknown = PageType("UNKNOWN")
 )
@@ -32,9 +33,6 @@ const (
 
 	// PageStateAnalyzed marks a page as analyzed (OCR complete).
 	PageStateAnalyzed = PageState("ANALYZED")
-
-	// PageStateIndexed marks a page as recognized and indexed for searching.
-	PageStateIndexed = PageState("INDEXED")
 )
 
 // DocumentPage represents a page of a document managed by the system.

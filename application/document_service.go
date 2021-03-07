@@ -26,6 +26,9 @@ type DocumentService interface {
 	// given page request.
 	GetUserDocuments(username string, pr domain.PageRequest) ([]domain.Document, int64, error)
 
+	// SearchUserDocuments returns all documents matching the given query with respect to the given page request.
+	SearchUserDocuments(username, query string, pr domain.PageRequest) ([]domain.DocumentSearchResult, int64, error)
+
 	// GetUserDocumentByDocumentNumber returns the document with the given document number owned by the given user.
 	GetUserDocumentByDocumentNumber(username string, documentNumber uint) (*domain.Document, error)
 
@@ -51,6 +54,7 @@ type documentServiceImpl struct {
 	users            domain.Users
 	documents        domain.Documents
 	documentArchive  domain.DocumentArchive
+	documentIndex    domain.DocumentIndex
 	documentRegistry domain.DocumentRegistry
 }
 
@@ -59,12 +63,14 @@ func NewDocumentService(
 	users domain.Users,
 	documents domain.Documents,
 	documentArchive domain.DocumentArchive,
+	documentIndex domain.DocumentIndex,
 	documentRegistry domain.DocumentRegistry,
 ) DocumentService {
 	return &documentServiceImpl{
 		users:            users,
 		documents:        documents,
 		documentArchive:  documentArchive,
+		documentIndex:    documentIndex,
 		documentRegistry: documentRegistry,
 	}
 }
@@ -80,6 +86,19 @@ func (s *documentServiceImpl) GetUserDocuments(
 	}
 
 	return documents, int64(count), nil
+}
+
+func (s *documentServiceImpl) SearchUserDocuments(
+	username string,
+	query string,
+	pr domain.PageRequest,
+) ([]domain.DocumentSearchResult, int64, error) {
+	results, totalCount, err := s.documentIndex.Search(query, pr)
+	if err != nil {
+		return nil, -1, errors.Wrapf(err, "Failed to search documents")
+	}
+
+	return results, int64(totalCount), nil
 }
 
 func (s *documentServiceImpl) GetUserDocumentByDocumentNumber(

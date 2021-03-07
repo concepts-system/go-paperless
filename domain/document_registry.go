@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	mailboxDocumentIndex = Mailbox("document.index")
+
 	mailboxPagePreprocess = Mailbox("document.page.preprocess")
 	malboxPageAnalyze     = Mailbox("document.page.analyze")
 )
@@ -26,6 +28,7 @@ type documentRegistryImpl struct {
 	tubeMail     TubeMail
 	documents    Documents
 	preprocessor DocumentPreprocessor
+	index        DocumentIndex
 	analyzer     DocumentAnalyzer
 }
 
@@ -34,11 +37,13 @@ func NewDocumentRegistry(
 	documents Documents,
 	preprocessor DocumentPreprocessor,
 	analyzer DocumentAnalyzer,
+	index DocumentIndex,
 ) DocumentRegistry {
 	registry := &documentRegistryImpl{
 		tubeMail,
 		documents,
 		preprocessor,
+		index,
 		analyzer,
 	}
 
@@ -67,8 +72,18 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 }
 
 func (d documentRegistryImpl) reviewDocumentPages(document *Document) {
-	for _, page := range document.Pages {
-		d.reviewDocumentPage(document.DocumentNumber, &page)
+	var err error
+
+	if document.AreAllPagesInState(PageStateAnalyzed) {
+		err = d.tubeMail.SendMessage(mailboxDocumentIndex, document.DocumentNumber)
+	} else {
+		for _, page := range document.Pages {
+			d.reviewDocumentPage(document.DocumentNumber, &page)
+		}
+	}
+
+	if err != nil {
+		log.Error(err)
 	}
 }
 
@@ -104,6 +119,7 @@ func (d documentRegistryImpl) reviewDocumentPage(documentNumber DocumentNumber, 
 
 func (d documentRegistryImpl) setupTubeMail() {
 	// Document-specific receivers
+	d.registerDocumentReceiver(mailboxDocumentIndex, d.indexDocument)
 
 	// Page-specific receivers
 	d.registerDocumentPageReceiver(mailboxPagePreprocess, d.preprocessPage)
@@ -111,6 +127,19 @@ func (d documentRegistryImpl) setupTubeMail() {
 }
 
 /* Handlers */
+
+func (d documentRegistryImpl) indexDocument(documentNumber DocumentNumber) error {
+	if err := d.index.IndexDocument(documentNumber); err != nil {
+		return err
+	}
+
+	if _, err := d.finishDocumentReview(documentNumber, DocumentStateIndexed); err != nil {
+		return err
+	}
+
+	d.Review(documentNumber)
+	return nil
+}
 
 func (d documentRegistryImpl) preprocessPage(
 	documentNumber DocumentNumber,
@@ -146,31 +175,31 @@ func (d documentRegistryImpl) analyzePage(
 
 /* Helper Methods */
 
-// func (d documentRegistryImpl) registerDocumentReceiver(
-// 	mailbox Mailbox,
-// 	handler func(DocumentNumber) error,
-// ) {
-// 	receiver := func(message ...interface{}) error {
-// 		if len(message) != 2 {
-// 			return errors.New("Unexpected document message length")
-// 		}
+func (d documentRegistryImpl) registerDocumentReceiver(
+	mailbox Mailbox,
+	handler func(DocumentNumber) error,
+) {
+	receiver := func(message ...interface{}) error {
+		if len(message) != 1 {
+			return errors.New("Unexpected document message length")
+		}
 
-// 		documentNumber, ok := message[0].(DocumentNumber)
-// 		if !ok {
-// 			return errors.New("Unexpected document message format")
-// 		}
+		documentNumber, ok := message[0].(DocumentNumber)
+		if !ok {
+			return errors.New("Unexpected document message format")
+		}
 
-// 		log.Infof(
-// 			"Received message in '%v': document %v",
-// 			mailbox,
-// 			documentNumber,
-// 		)
+		log.Infof(
+			"{document: %v} -> @%v",
+			documentNumber,
+			mailbox,
+		)
 
-// 		return handler(documentNumber)
-// 	}
+		return handler(documentNumber)
+	}
 
-// 	d.mustRegisterReceiver(mailbox, receiver)
-// }
+	d.mustRegisterReceiver(mailbox, receiver)
+}
 
 func (d documentRegistryImpl) registerDocumentPageReceiver(
 	mailbox Mailbox,
@@ -204,6 +233,22 @@ func (d documentRegistryImpl) mustRegisterReceiver(mailbox Mailbox, receiver Rec
 	if err := d.tubeMail.RegisterReceiver(mailbox, receiver); err != nil {
 		log.Fatal("Failed to register receiver", err)
 	}
+}
+
+func (d documentRegistryImpl) finishDocumentReview(documentNumber DocumentNumber, state DocumentState) (*Document, error) {
+	document, err := d.documents.GetByDocumentNumber(documentNumber)
+	if err != nil {
+		log.Error(err)
+	}
+
+	// TODO: Introduce 'isInReview' flag as for pages
+	document.State = state
+	document, err = d.documents.Update(document)
+	if err != nil {
+		return nil, err
+	}
+
+	return document, nil
 }
 
 func (d documentRegistryImpl) startPageReview(documentNumber DocumentNumber, page *DocumentPage) (*DocumentPage, error) {

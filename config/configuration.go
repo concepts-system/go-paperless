@@ -25,6 +25,7 @@ type Configuration struct {
 	Database DatabaseConfiguration
 	Security SecurityConfiguration
 	Storage  StorageConfiguration
+	Index    IndexConfiguration
 }
 
 // ServerConfiguration holds all configuration values regarding the HTTP server.
@@ -51,6 +52,10 @@ type SecurityConfiguration struct {
 // StorageConfiguration holds all configuration values regarding file storage.
 type StorageConfiguration struct {
 	DataPath string `default:"data" split_words:"true"`
+}
+
+type IndexConfiguration struct {
+	DocumentsPath string `default:"documents.bleve" split_words:"true"`
 }
 
 // HasProfile returns a boolean value indicating whether the given profile is active.

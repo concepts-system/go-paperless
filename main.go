@@ -41,6 +41,7 @@ type bootstrapper struct {
 	documentArchive      domain.DocumentArchive
 	documentPreprocessor domain.DocumentPreprocessor
 	documentAnalyzer     domain.DocumentAnalyzer
+	documentIndex        domain.DocumentIndex
 	documentRegistry     domain.DocumentRegistry
 
 	authService     application.AuthService
@@ -133,12 +134,14 @@ func setupDependencies(bs *bootstrapper) {
 	initializeDocumentArchive(bs)
 	bs.documentPreprocessor = infrastructure.NewDocumentPreprocessorImpl(bs.documents, bs.documentArchive)
 	bs.documentAnalyzer = infrastructure.NewTesseractOcrEngine(bs.documents, bs.documentArchive)
+	initializeDocumentIndex(bs)
 
 	bs.documentRegistry = domain.NewDocumentRegistry(
 		bs.tubeMail,
 		bs.documents,
 		bs.documentPreprocessor,
 		bs.documentAnalyzer,
+		bs.documentIndex,
 	)
 
 	bs.userService = application.NewUserService(bs.users)
@@ -152,6 +155,7 @@ func setupDependencies(bs *bootstrapper) {
 		bs.users,
 		bs.documents,
 		bs.documentArchive,
+		bs.documentIndex,
 		bs.documentRegistry,
 	)
 }
@@ -189,14 +193,15 @@ func initializeDocumentArchive(bs *bootstrapper) {
 	bs.documentArchive = documentArchive
 }
 
-// func initializeWorkers() {
-// 	log.Info("Initializing workers...")
+func initializeDocumentIndex(bs *bootstrapper) {
+	documentIndex, err := infrastructure.NewBleveDocumentIndex(bs.config.Index.DocumentsPath, bs.documents)
 
-// 	manager := worker.NewManager()
-// 	documents.RegisterWorkers(manager)
+	if err != nil {
+		log.Fatalf("Failed to initialize document index: %v", err)
+	}
 
-// 	go manager.Run()
-// }
+	bs.documentIndex = documentIndex
+}
 
 func ensureUserExists(bs *bootstrapper) {
 	_, count, err := bs.userService.GetUsers(domain.PageRequest{Offset: 0, Size: 1})

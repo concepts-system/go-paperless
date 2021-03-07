@@ -2,6 +2,9 @@ package domain
 
 // Documents defines an interface for managing the collection of all documents.
 type Documents interface {
+	// Find returns the a subset of all documents with respect to the given page request.
+	Find(pr PageRequest) ([]Document, Count, error)
+
 	// FindByUsername returns the set of documents owned by the user
 	// with the given username, alongside with the total count with respect to the given
 	// page request.

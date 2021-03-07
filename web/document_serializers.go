@@ -14,8 +14,14 @@ type documentResponse struct {
 	Date           *time.Time `json:"date,omitempty"`
 	State          string     `json:"state"`
 	Fingerprint    string     `json:"fingerprint,omitempty"`
-	Type           string     `json:"type"`
+	Type           string     `json:"type,omitempty"`
 	PageCount      int        `json:"pageCount"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt,omitempty"`
+}
+
+type documentSearchResultResponse struct {
+	DocumentNumber uint `json:"documentNumber"`
 }
 
 type (
@@ -28,6 +34,16 @@ type (
 		C         echo.Context
 		Documents []domain.Document
 	}
+
+	documentSearchResultSerializer struct {
+		C echo.Context
+		*domain.DocumentSearchResult
+	}
+
+	documentSearchResultListSerializer struct {
+		C             echo.Context
+		SearchResults []domain.DocumentSearchResult
+	}
 )
 
 // Response returns the API response for a document.
@@ -39,16 +55,37 @@ func (s documentSerializer) Response() documentResponse {
 		Fingerprint:    string(s.Fingerprint),
 		State:          string(s.State),
 		Type:           string(s.Type),
+		CreatedAt:      s.CreatedAt,
+		UpdatedAt:      s.UpdatedAt,
 		PageCount:      len(s.Pages),
 	}
 }
 
 // Response returns the API response for a list of documents.
-func (s documentListSerializer) Response() []documentResponse {
-	response := make([]documentResponse, len(s.Documents))
+func (s documentListSerializer) Response() []interface{} {
+	response := make([]interface{}, len(s.Documents))
 
 	for i, document := range s.Documents {
 		serializer := documentSerializer{s.C, &document}
+		response[i] = serializer.Response()
+	}
+
+	return response
+}
+
+// Response returns the API response for a document search result.
+func (s documentSearchResultSerializer) Response() documentSearchResultResponse {
+	return documentSearchResultResponse{
+		DocumentNumber: uint(s.DocumentNumber),
+	}
+}
+
+// Response returns the API response for a list of document search results.
+func (s documentSearchResultListSerializer) Response() []interface{} {
+	response := make([]interface{}, len(s.SearchResults))
+
+	for i, result := range s.SearchResults {
+		serializer := documentSearchResultSerializer{s.C, &result}
 		response[i] = serializer.Response()
 	}
 

@@ -34,12 +34,11 @@ const (
 	// further processing, as not all pages have been processed.
 	DocumentStateEdited = DocumentState("EDITED")
 
-	// DocumentStateProcessed marks a document processed, meaning all pages are
-	// processed so that the document is ready for further processing.
-	DocumentStateProcessed = DocumentState("PROCESSED")
-
 	// DocumentStateIndexed marks a document as indexed.
 	DocumentStateIndexed = DocumentState("INDEXED")
+
+	// DocumentStateProcessed marks a document as fully processed (in sync).
+	DocumentStateProcessed = DocumentState("PROCESSED")
 
 	// DocumentStateArchived marks a document as archived (in sync).
 	DocumentStateArchived = DocumentState("ARCHIVED")
@@ -54,6 +53,8 @@ type Document struct {
 	State          DocumentState
 	Fingerprint    Fingerprint
 	Type           DocumentType
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 	Pages          []DocumentPage
 }
 

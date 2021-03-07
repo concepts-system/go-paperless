@@ -38,8 +38,8 @@ func (s userSerializer) Response() userResponse {
 }
 
 // Response returns the API response for a list of users.
-func (s userListSerializer) Response() []userResponse {
-	response := make([]userResponse, len(s.Users))
+func (s userListSerializer) Response() []interface{} {
+	response := make([]interface{}, len(s.Users))
 
 	for i, user := range s.Users {
 		serializer := userSerializer{s.C, &user}
