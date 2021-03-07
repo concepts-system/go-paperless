@@ -60,7 +60,8 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 
 	switch document.State {
 	case DocumentStateEmpty:
-		log.Debug("Document is empty; nothing to do")
+		log.Debug("Document is empty; indexing")
+		err = d.indexDocument(documentNumber)
 	case DocumentStateEdited:
 		log.Debug("Document has been edited since last review; reviewing pages")
 		d.reviewDocumentPages(document)
@@ -68,6 +69,10 @@ func (d documentRegistryImpl) Review(documentNumber DocumentNumber) {
 		log.Debug("Document is already archived; nothing to do")
 	default:
 		log.Warnf("Documents in state %s are not handled yet!", document.State)
+	}
+
+	if err != nil {
+		log.Error(err)
 	}
 }
 

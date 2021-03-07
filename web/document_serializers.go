@@ -21,7 +21,7 @@ type documentResponse struct {
 }
 
 type documentSearchResultResponse struct {
-	DocumentNumber uint `json:"documentNumber"`
+	Document documentResponse `json:"document"`
 }
 
 type (
@@ -76,7 +76,7 @@ func (s documentListSerializer) Response() []interface{} {
 // Response returns the API response for a document search result.
 func (s documentSearchResultSerializer) Response() documentSearchResultResponse {
 	return documentSearchResultResponse{
-		DocumentNumber: uint(s.DocumentNumber),
+		Document: documentSerializer{s.C, s.Document}.Response(),
 	}
 }
 

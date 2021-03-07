@@ -136,7 +136,12 @@ func (b *bleveIndex) Search(
 		return nil, 0, errors.Wrap(err, "Failed to search document index")
 	}
 
-	return b.mapDocumentSearchResults(results), domain.Count(results.Total), nil
+	searchResults, err := b.mapDocumentSearchResults(results)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	return searchResults, domain.Count(results.Total), nil
 }
 
 /* Helper Methods */
@@ -231,15 +236,29 @@ func (b *bleveIndex) documentPageEntry(page domain.DocumentPage) *pageEntry {
 	}
 }
 
-func (b *bleveIndex) mapDocumentSearchResults(result *bleve.SearchResult) []domain.DocumentSearchResult {
-	results := make([]domain.DocumentSearchResult, len(result.Hits))
+func (b *bleveIndex) mapDocumentSearchResults(result *bleve.SearchResult) ([]domain.DocumentSearchResult, error) {
+	count := len(result.Hits)
+	if count == 0 {
+		return []domain.DocumentSearchResult{}, nil
+	}
 
+	documentNumbers := make([]domain.DocumentNumber, len(result.Hits))
 	for i, hit := range result.Hits {
 		documentNumber, _ := strconv.Atoi(hit.ID)
+		documentNumbers[i] = domain.DocumentNumber(documentNumber)
+	}
+
+	documents, err := b.documents.FindByDocumentNumbers(documentNumbers...)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]domain.DocumentSearchResult, len(result.Hits))
+	for i, document := range documents {
 		results[i] = domain.DocumentSearchResult{
-			DocumentNumber: domain.DocumentNumber(documentNumber),
+			Document: &document,
 		}
 	}
 
-	return results
+	return results, nil
 }

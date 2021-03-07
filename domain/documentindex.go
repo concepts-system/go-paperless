@@ -1,7 +1,7 @@
 package domain
 
 type DocumentSearchResult struct {
-	DocumentNumber DocumentNumber
+	Document *Document
 }
 
 // DocumentIndex abstracts all functionality required for indexing and searching document and pages.

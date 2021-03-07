@@ -85,6 +85,21 @@ func (d documentsGormImpl) Find(page domain.PageRequest) ([]domain.Document, dom
 	return d.mapper.MapDocumentModelsToDomainEntities(documents), domain.Count(totalCount), nil
 }
 
+func (d documentsGormImpl) FindByDocumentNumbers(documentNumbers ...domain.DocumentNumber) ([]domain.Document, error) {
+	var documents []documentModel
+
+	err := d.db.
+		Preload("Pages").
+		Find(&documents, documentNumbers).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return d.mapper.MapDocumentModelsToDomainEntities(documents), nil
+}
+
 func (d documentsGormImpl) FindByUsername(
 	username domain.Name,
 	page domain.PageRequest,

@@ -37,17 +37,16 @@ func (r *documentRouter) DefineRoutes(group *echo.Group, auth *AuthMiddleware) {
 	documentGroup.POST("", r.createDocument)
 	documentGroup.GET("/:id", r.getDocument)
 	// documentGroup.PUT("/:id", updateDocument)
-	// // documentGroup.DELETE("/:id", deleteDocument)
+	// documentGroup.DELETE("/:id", deleteDocument)
 	// documentGroup.GET("/:id/content", getDocumentContent)
 
 	pageGroup := documentGroup.Group("/:id/pages")
 	pageGroup.GET("", r.getDocumentPages)
 	pageGroup.POST("/content", r.addPagesToDocument)
 	pageGroup.GET("/:pageNumber", r.getDocumentPage)
-	// // pageGroup.PUT("/:pageNumber", updateDocumentPage)
-	// // pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
+	// pageGroup.DELETE("/:pageNumber", deleteDocumentPage)
 	pageGroup.GET("/:pageNumber/content", r.getDocumentPageContent)
-	// // pageGroup.PUT("/:pageNumber/content", updatePageContent)
+	// pageGroup.PUT("/:pageNumber/content", updatePageContent)
 }
 
 /* Handlers */

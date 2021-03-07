@@ -130,6 +130,7 @@ func (s *documentServiceImpl) CreateNewDocument(username string, document *domai
 		return nil, errors.Wrap(err, "Failed to create document")
 	}
 
+	s.documentRegistry.Review(newDocument.DocumentNumber)
 	return newDocument, nil
 }
 
